@@ -40,7 +40,7 @@ const FlowerPot: React.FC<FlowerPotProps> = ({
         <Path
           fill="#D19475"
           stroke="#B37B5F"
-          strokeWidth={2}
+          strokeWidth={3}
           d="m170.769 33-17.411 82.905A19 19 0 0 1 134.764 131H47.14a19 19 0 0 1-18.684-15.544L13.202 33H170.77Z"
         />
         {/* Pot rim */}
@@ -51,7 +51,7 @@ const FlowerPot: React.FC<FlowerPotProps> = ({
           y={1}
           fill="#C28566"
           stroke="#B37B5F"
-          strokeWidth={2}
+          strokeWidth={3}
           rx={10}
         />
       </Svg>
@@ -85,7 +85,7 @@ const styles = StyleSheet.create({
   },
   emoji: {
     textAlign: 'center',
-    marginBottom: 2,
+    marginBottom: 0,
   },
   name: {
     position: 'absolute',

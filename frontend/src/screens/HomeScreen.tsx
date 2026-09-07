@@ -11,6 +11,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import Svg, { Defs, RadialGradient, Rect, Stop } from 'react-native-svg';
 import AddPlantCard from '../components/AddPlantCard';
 import NotificationTimePicker from '../components/NotificationTimePicker';
 import PlantCard from '../components/PlantCard';
@@ -45,10 +46,10 @@ const COLS = 3;
 const SHELVES = 3;
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const H_PADDING = 20;
-const GAP = 12;
+// const GAP = 12;
 const SHELF_WIDTH = SCREEN_WIDTH - H_PADDING * 2;
-const CARD_SIZE = SCREEN_WIDTH/4;
-const FOOTER_HEIGHT = SCREEN_HEIGHT * 0.25; // made footer bigger
+// const CARD_SIZE = SCREEN_WIDTH/4;
+const FOOTER_HEIGHT = SCREEN_HEIGHT * 0.25;
 const SPRINKLER_SIZE = 64;
 const NUM_DROPS = 8;
 
@@ -396,7 +397,7 @@ const HomeScreen: React.FC = () => {
         >
           {rows.map((row, shelfIdx) => (
             <View key={shelfIdx} style={styles.shelfSection}>
-              <View style={styles.row}>
+              <View style={[styles.row, { width: SHELF_WIDTH * 0.65 }]}>
                 {row.map((plant, colIdx) => {
                   const idx = shelfIdx * COLS + colIdx;
                   const isBeingWatered = wateringIdx === idx;
@@ -404,6 +405,7 @@ const HomeScreen: React.FC = () => {
                   return (
                     <View
                       key={plant?.id ?? `slot-${idx}`}
+                      style={styles.slot}
                       ref={ref => {
                         if (ref) { slotRefs.current.set(idx, ref); }
                         else { slotRefs.current.delete(idx); }
@@ -415,9 +417,7 @@ const HomeScreen: React.FC = () => {
                           onPress={openInfoCard}
                           isBeingWatered={isBeingWatered}
                         />
-                      ) : (
-                        <View style={{ width: CARD_SIZE, height: CARD_SIZE }} />
-                      )}
+                      ) : null}
                     </View>
                   );
                 })}
@@ -436,6 +436,24 @@ const HomeScreen: React.FC = () => {
 
       {/* Garden footer — fence covers the top edge, buttons + sprinkler sit in front */}
       <View style={[styles.footer, { paddingBottom: insets.bottom + 8 }]}>
+        <Svg height="100%" width="100%" style={StyleSheet.absoluteFill}>
+          <Defs>
+            <RadialGradient
+              id="footerGrad"
+              cx="50%"
+              cy="0%"
+              rx="213.51%"
+              ry="100%"
+              fx="50%"
+              fy="0%"
+            >
+              <Stop offset="0%" stopColor="#A3E3ED" stopOpacity="1" />
+              <Stop offset="56.32%" stopColor="#A1D65C" stopOpacity="1" />
+              <Stop offset="100%" stopColor="#8D7865" stopOpacity="1" />
+            </RadialGradient>
+          </Defs>
+          <Rect width="100%" height="100%" fill="url(#footerGrad)" />
+        </Svg>
 
         {/* Fence: spans full width, overflows upward to cover the plants/footer border */}
         <View style={styles.fenceWrapper} pointerEvents="none">
@@ -548,7 +566,7 @@ const HomeScreen: React.FC = () => {
 const styles = StyleSheet.create({
   safe: {
     flex: 1,
-    backgroundColor: '#D8F3DC',
+    backgroundColor: '#8D7865',
   },
   header: {
     flexDirection: 'row',
@@ -567,7 +585,7 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     fontSize: 13,
-    color: '#74C69D',
+    color: '#000000',
     fontWeight: '500',
     marginTop: 2,
   },
@@ -588,7 +606,8 @@ const styles = StyleSheet.create({
   },
   plantsArea: {
     flex: 1,
-    backgroundColor: '#D8F3DC',
+    backgroundColor: '#A3E3ED',
+    padding: 20,
   },
   shelfSection: {
     alignItems: 'center',
@@ -596,8 +615,16 @@ const styles = StyleSheet.create({
   },
   row: {
     flexDirection: 'row',
-    gap: GAP,
-    marginBottom: 4,
+    justifyContent: 'space-between',
+    alignItems: 'flex-end',
+    marginBottom: 0,
+    zIndex: 10,
+  },
+  slot: {
+    width: 60,
+    height: 80,
+    alignItems: 'center',
+    justifyContent: 'flex-end',
   },
   emptyHint: {
     textAlign: 'center',
@@ -610,7 +637,6 @@ const styles = StyleSheet.create({
   /* footer */
   footer: {
     height: FOOTER_HEIGHT,
-    backgroundColor: '#D8F3DC',
     overflow: 'visible',   // let fence bleed upward
     alignItems: 'center',
     justifyContent: 'flex-end',
@@ -625,7 +651,7 @@ const styles = StyleSheet.create({
   },
   flowersRow: {
     position: 'absolute',
-    top: 52,              // bottom of fence pickets, above rails
+    top: 50,              // bottom of fence pickets, above rails
     left: 0,
     right: 0,
     flexDirection: 'row',
@@ -645,7 +671,7 @@ const styles = StyleSheet.create({
   footerBtn: {
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#FFFFFF',
+    // backgroundColor: '#FFFFFF',
     width: 68,
     height: 68,
     borderRadius: 34,
@@ -671,7 +697,7 @@ const styles = StyleSheet.create({
   sprinklerInFooter: {
     zIndex: 10,
     elevation: 10,
-    backgroundColor: '#FFFFFF',
+    // backgroundColor: '#FFFFFF',
     borderRadius: 40,
     padding: 8,
     shadowColor: '#000',
@@ -698,7 +724,7 @@ const styles = StyleSheet.create({
     width: 5,
     height: 7,
     borderRadius: 4,
-    backgroundColor: '#4FC3F7',
+    backgroundColor: '#1D3AA5',
   },
 });
 
