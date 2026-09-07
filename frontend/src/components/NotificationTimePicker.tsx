@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useEffect, useRef, useState } from 'react';
 import {
   FlatList,
   Modal,
@@ -7,33 +7,111 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import type { ViewToken } from 'react-native';
 
 interface NotificationTimePickerProps {
   visible: boolean;
-  currentHour: number;
-  onSelect: (hour: number) => void;
+  currentHour?: number;
+  currentMinute?: number;
+  onSelect?: (hour: number, minute: number) => void;
   onClose: () => void;
 }
 
 const HOURS = Array.from({ length: 24 }, (_, i) => i);
+const MINUTES = Array.from({ length: 60 }, (_, i) => i);
 
-const formatHour = (h: number): string => {
+const pad = (n: number) => String(n).padStart(2, '0');
+
+const hourLabel = (h: number): string => {
   const period = h >= 12 ? 'PM' : 'AM';
   const display = h === 0 ? 12 : h > 12 ? h - 12 : h;
-  return `${display}:00 ${period}`;
+  return display + ' ' + period;
 };
+
+const ITEM_HEIGHT = 52;
+const VISIBLE_ITEMS = 5;
+const LIST_HEIGHT = ITEM_HEIGHT * VISIBLE_ITEMS;
 
 const NotificationTimePicker: React.FC<NotificationTimePickerProps> = ({
   visible,
   currentHour,
+  currentMinute,
   onSelect,
   onClose,
 }) => {
-  const [selected, setSelected] = useState(currentHour);
+  const [selectedHour, setSelectedHour] = useState<number>(currentHour ?? 17);
+  const [selectedMinute, setSelectedMinute] = useState<number>(currentMinute ?? 0);
+
+  const hourListRef = useRef<FlatList>(null);
+  const minuteListRef = useRef<FlatList>(null);
+
+  useEffect(() => {
+    if (!visible) { return; }
+    const h = currentHour ?? 17;
+    const m = currentMinute ?? 0;
+    setSelectedHour(h);
+    setSelectedMinute(m);
+    setTimeout(() => {
+      hourListRef.current?.scrollToIndex({ index: h, animated: false });
+      minuteListRef.current?.scrollToIndex({ index: m, animated: false });
+    }, 80);
+  }, [visible, currentHour, currentMinute]);
 
   const handleConfirm = () => {
-    onSelect(selected);
+    onSelect?.(selectedHour, selectedMinute);
     onClose();
+  };
+
+  const onViewableHoursChanged = useRef(({ viewableItems }: { viewableItems: ViewToken[] }) => {
+    if (viewableItems.length > 0) {
+      const mid = viewableItems[Math.floor(viewableItems.length / 2)];
+      if (mid?.item !== undefined) { setSelectedHour(mid.item as number); }
+    }
+  }).current;
+
+  const onViewableMinutesChanged = useRef(({ viewableItems }: { viewableItems: ViewToken[] }) => {
+    if (viewableItems.length > 0) {
+      const mid = viewableItems[Math.floor(viewableItems.length / 2)];
+      if (mid?.item !== undefined) { setSelectedMinute(mid.item as number); }
+    }
+  }).current;
+
+  const viewabilityConfig = useRef({ itemVisiblePercentThreshold: 60 }).current;
+
+  const renderHour = ({ item: hour }: { item: number }) => {
+    const isSelected = hour === selectedHour;
+    return (
+      <TouchableOpacity
+        style={[styles.item, isSelected && styles.itemSelected]}
+        onPress={() => {
+          setSelectedHour(hour);
+          hourListRef.current?.scrollToIndex({ index: hour, animated: true });
+        }}
+        activeOpacity={0.7}
+      >
+        <Text style={[styles.itemText, isSelected && styles.itemTextSelected]}>
+          {hourLabel(hour)}
+        </Text>
+      </TouchableOpacity>
+    );
+  };
+
+  const renderMinute = ({ item: minute }: { item: number }) => {
+    const isSelected = minute === selectedMinute;
+    return (
+      <TouchableOpacity
+        style={[styles.item, isSelected && styles.itemSelected]}
+        onPress={() => {
+          setSelectedMinute(minute);
+          minuteListRef.current?.scrollToIndex({ index: minute, animated: true });
+        }}
+        activeOpacity={0.7}
+      >
+        <Text style={[styles.itemText, isSelected && styles.itemTextSelected]}>
+          :{pad(minute)}
+        </Text>
+      </TouchableOpacity>
+    );
   };
 
   return (
@@ -45,41 +123,62 @@ const NotificationTimePicker: React.FC<NotificationTimePickerProps> = ({
     >
       <View style={styles.backdrop}>
         <View style={styles.sheet}>
-          {/* Handle bar */}
           <View style={styles.handle} />
-
-          <Text style={styles.title}>🔔 Notification Time</Text>
+          <Text style={styles.title}>Notification Time</Text>
           <Text style={styles.subtitle}>
-            Choose what hour you'd like to receive watering reminders
+            Choose the time to receive watering reminders
           </Text>
-
-          <FlatList
-            data={HOURS}
-            keyExtractor={item => String(item)}
-            style={styles.list}
-            showsVerticalScrollIndicator={false}
-            renderItem={({ item: hour }) => {
-              const isSelected = hour === selected;
-              return (
-                <TouchableOpacity
-                  style={[styles.hourRow, isSelected && styles.hourRowSelected]}
-                  onPress={() => setSelected(hour)}
-                  activeOpacity={0.7}
-                >
-                  <Text
-                    style={[
-                      styles.hourText,
-                      isSelected && styles.hourTextSelected,
-                    ]}
-                  >
-                    {formatHour(hour)}
-                  </Text>
-                  {isSelected && <Text style={styles.check}>✓</Text>}
-                </TouchableOpacity>
-              );
-            }}
-          />
-
+          <View style={styles.preview}>
+            <Text style={styles.previewText}>
+              {hourLabel(selectedHour)} :{pad(selectedMinute)}
+            </Text>
+          </View>
+          <View style={styles.pickerContainer}>
+            <View style={styles.selectionBar} pointerEvents="none" />
+            <View style={styles.column}>
+              <Text style={styles.columnLabel}>Hour</Text>
+              <FlatList
+                ref={hourListRef}
+                data={HOURS}
+                keyExtractor={item => 'h-' + item}
+                renderItem={renderHour}
+                showsVerticalScrollIndicator={false}
+                style={styles.list}
+                contentContainerStyle={styles.listContent}
+                getItemLayout={(_, index) => ({
+                  length: ITEM_HEIGHT,
+                  offset: ITEM_HEIGHT * index,
+                  index,
+                })}
+                onViewableItemsChanged={onViewableHoursChanged}
+                viewabilityConfig={viewabilityConfig}
+                snapToInterval={ITEM_HEIGHT}
+                decelerationRate="fast"
+              />
+            </View>
+            <View style={styles.columnDivider} />
+            <View style={styles.column}>
+              <Text style={styles.columnLabel}>Min</Text>
+              <FlatList
+                ref={minuteListRef}
+                data={MINUTES}
+                keyExtractor={item => 'm-' + item}
+                renderItem={renderMinute}
+                showsVerticalScrollIndicator={false}
+                style={styles.list}
+                contentContainerStyle={styles.listContent}
+                getItemLayout={(_, index) => ({
+                  length: ITEM_HEIGHT,
+                  offset: ITEM_HEIGHT * index,
+                  index,
+                })}
+                onViewableItemsChanged={onViewableMinutesChanged}
+                viewabilityConfig={viewabilityConfig}
+                snapToInterval={ITEM_HEIGHT}
+                decelerationRate="fast"
+              />
+            </View>
+          </View>
           <View style={styles.buttonRow}>
             <TouchableOpacity style={styles.cancelBtn} onPress={onClose}>
               <Text style={styles.cancelText}>Cancel</Text>
@@ -106,7 +205,6 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 24,
     paddingHorizontal: 24,
     paddingBottom: 32,
-    maxHeight: '60%',
   },
   handle: {
     alignSelf: 'center',
@@ -128,42 +226,87 @@ const styles = StyleSheet.create({
     color: '#74C69D',
     textAlign: 'center',
     marginTop: 6,
+    marginBottom: 12,
+  },
+  preview: {
+    alignSelf: 'center',
+    backgroundColor: '#D8F3DC',
+    borderRadius: 12,
+    paddingHorizontal: 24,
+    paddingVertical: 8,
     marginBottom: 16,
   },
-  list: {
-    flexGrow: 0,
-    maxHeight: 280,
-  },
-  hourRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 12,
-    marginBottom: 4,
-  },
-  hourRowSelected: {
-    backgroundColor: '#D8F3DC',
-  },
-  hourText: {
-    fontSize: 16,
+  previewText: {
+    fontSize: 26,
+    fontWeight: '800',
     color: '#1C3D1C',
+    letterSpacing: 1,
+  },
+  pickerContainer: {
+    flexDirection: 'row',
+    height: LIST_HEIGHT,
+    position: 'relative',
+    marginBottom: 16,
+    overflow: 'hidden',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  selectionBar: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: ITEM_HEIGHT * 2,
+    height: ITEM_HEIGHT,
+    backgroundColor: '#D8F3DC',
+    zIndex: 0,
+  },
+  column: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  columnLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#9CA3AF',
+    letterSpacing: 0.8,
+    textTransform: 'uppercase',
+    paddingVertical: 6,
+    backgroundColor: '#FFFFFF',
+    alignSelf: 'stretch',
+    textAlign: 'center',
+  },
+  columnDivider: {
+    width: 1,
+    backgroundColor: '#E5E7EB',
+  },
+  list: {
+    flex: 1,
+    width: '100%',
+  },
+  listContent: {
+    paddingVertical: ITEM_HEIGHT * 2,
+  },
+  item: {
+    height: ITEM_HEIGHT,
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '100%',
+  },
+  itemSelected: {},
+  itemText: {
+    fontSize: 17,
+    color: '#6B7280',
     fontWeight: '500',
   },
-  hourTextSelected: {
-    fontWeight: '700',
+  itemTextSelected: {
+    fontSize: 19,
+    fontWeight: '800',
     color: '#2D6A4F',
-  },
-  check: {
-    fontSize: 18,
-    color: '#2D6A4F',
-    fontWeight: '700',
   },
   buttonRow: {
     flexDirection: 'row',
     gap: 12,
-    marginTop: 16,
   },
   cancelBtn: {
     flex: 1,

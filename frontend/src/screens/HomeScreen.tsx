@@ -10,29 +10,35 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import AddPlantCard from '../components/AddPlantCard';
 import NotificationTimePicker from '../components/NotificationTimePicker';
 import PlantCard from '../components/PlantCard';
 import PlantInfoCard from '../components/PlantInfoCard';
-import Shelf from '../components/Shelf';
+import Fence from '../decorations/Fence';
+import Flower from '../decorations/Flower';
+import Shelf from '../decorations/Shelf';
+import Sprinkler from '../decorations/Sprinkler';
 import {
   createPlant,
   deletePlant,
   getAllPlants,
   getNotificationHour,
+  getNotificationMinute,
   setNotificationHour,
+  setNotificationMinute,
   updatePlant,
 } from '../database/db';
 import { computeStatus } from '../services/statusComputer';
 import {
   rescheduleAllNotifications,
   schedulePlantNotification,
-  sendTestNotification,
+  cancelPlantNotification,
 } from '../services/notifications';
 import type { Plant, PlantFormData } from '../types/Plant';
+import { todayStr, formatTime } from '../utils/formatting';
 
-/* ─── layout constants ──────────────────────────────────────────────────── */
+/* ─── layout constants ─── */
 
 const MAX_PLANTS = 9;
 const COLS = 3;
@@ -42,30 +48,15 @@ const H_PADDING = 20;
 const GAP = 12;
 const SHELF_WIDTH = SCREEN_WIDTH - H_PADDING * 2;
 const CARD_SIZE = SCREEN_WIDTH/4;
-const FOOTER_HEIGHT = SCREEN_HEIGHT * 0.2;
+const FOOTER_HEIGHT = SCREEN_HEIGHT * 0.25; // made footer bigger
 const SPRINKLER_SIZE = 64;
 const NUM_DROPS = 8;
 
-/* ─── helpers ───────────────────────────────────────────────────────────── */
-
-const todayStr = (): string => {
-  const d = new Date();
-  return [
-    d.getFullYear(),
-    String(d.getMonth() + 1).padStart(2, '0'),
-    String(d.getDate()).padStart(2, '0'),
-  ].join('-');
-};
-
-const formatHour = (h: number): string => {
-  const period = h >= 12 ? 'PM' : 'AM';
-  const display = h === 0 ? 12 : h > 12 ? h - 12 : h;
-  return `${display}:00 ${period}`;
-};
-
-/* ─── component ─────────────────────────────────────────────────────────── */
+/* ─── component ─── */
 
 const HomeScreen: React.FC = () => {
+  const insets = useSafeAreaInsets();
+
   /* ── core state ── */
   const [plants, setPlants] = useState<Plant[]>([]);
   const [addCardVisible, setAddCardVisible] = useState(false);
@@ -73,6 +64,7 @@ const HomeScreen: React.FC = () => {
   const [selectedPlant, setSelectedPlant] = useState<Plant | null>(null);
   const [timePickerVisible, setTimePickerVisible] = useState(false);
   const [notifHour, setNotifHour] = useState(17);
+  const [notifMinute, setNotifMinute] = useState(0);
 
   /* ── sprinkler drag state ── */
   const [isDragging, setIsDragging] = useState(false);
@@ -105,12 +97,21 @@ const HomeScreen: React.FC = () => {
 
   /* ── data loading ── */
   const loadPlants = useCallback(() => {
-    setPlants(getAllPlants());
+    try {
+      setPlants(getAllPlants());
+    } catch (err: any) {
+      Alert.alert('Load Error', err?.message ?? String(err));
+    }
   }, []);
 
   useEffect(() => {
     loadPlants();
-    setNotifHour(getNotificationHour());
+    try {
+      setNotifHour(getNotificationHour());
+      setNotifMinute(getNotificationMinute());
+    } catch (err: any) {
+      console.warn('Could not load notification time', err);
+    }
   }, [loadPlants]);
 
   /* ── plant CRUD handlers ── */
@@ -122,11 +123,11 @@ const HomeScreen: React.FC = () => {
   };
 
   const handleAddSave = (data: PlantFormData) => {
-    console.log('[HomeScreen] handleAddSave called, data.name:', data.name);
     try {
-      createPlant(data);
+      const newPlant = createPlant(data);
       setAddCardVisible(false);
       loadPlants();
+      schedulePlantNotification(newPlant).catch(console.warn);
     } catch (err: any) {
       Alert.alert('Error', `Could not save plant: ${err?.message ?? err}`);
     }
@@ -138,26 +139,47 @@ const HomeScreen: React.FC = () => {
       updatePlant({ ...selectedPlant, name: newName });
       setSelectedPlant(prev => prev ? { ...prev, name: newName } : prev);
       loadPlants();
+      const updated = getAllPlants().find(p => p.id === selectedPlant.id);
+      if (updated) {
+        schedulePlantNotification(updated).catch(console.warn);
+      }
     } catch (err: any) {
-      console.error('Could not rename plant:', err);
+      Alert.alert('Error', `Could not rename plant: ${err?.message ?? err}`);
+    }
+  };
+
+  const handleInfoSaveLastWatered = (newDate: string) => {
+    if (!selectedPlant) { return; }
+    try {
+      const newStatus = computeStatus(newDate, selectedPlant.watering_days);
+      const updated = { ...selectedPlant, last_watered: newDate, status: newStatus };
+      updatePlant(updated);
+      setSelectedPlant(updated);
+      loadPlants();
+      schedulePlantNotification(updated).catch(console.warn);
+    } catch (err: any) {
+      Alert.alert('Error', `Could not update last watered: ${err?.message ?? err}`);
     }
   };
 
   const handleInfoDelete = () => {
     if (!selectedPlant) { return; }
     try {
+      cancelPlantNotification(selectedPlant.id).catch(console.warn);
       deletePlant(selectedPlant.id);
       setInfoCardVisible(false);
       loadPlants();
     } catch (err: any) {
-      console.error('Could not delete plant:', err);
+      Alert.alert('Error', `Could not delete plant: ${err?.message ?? err}`);
     }
   };
 
-  const handleTimeChange = async (hour: number) => {
-    setNotificationHour(hour);
-    setNotifHour(hour);
+  const handleTimeChange = async (hour: number, minute: number) => {
     try {
+      setNotificationHour(hour);
+      setNotificationMinute(minute);
+      setNotifHour(hour);
+      setNotifMinute(minute);
       await rescheduleAllNotifications(getAllPlants());
     } catch (err: any) {
       console.warn('[HomeScreen] reschedule error:', err);
@@ -351,11 +373,11 @@ const HomeScreen: React.FC = () => {
 
   /* ── render ── */
   return (
-    <SafeAreaView style={styles.safe}>
+    <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
       {/* Header */}
       <View style={styles.header}>
         <View>
-          <Text style={styles.appName}>🌿 Planty</Text>
+          <Text style={styles.appName}>🌱 Planty</Text>
           <Text style={styles.subtitle}>Your plant collection</Text>
         </View>
         <View style={styles.badge}>
@@ -390,16 +412,11 @@ const HomeScreen: React.FC = () => {
                       {plant ? (
                         <PlantCard
                           plant={plant}
-                          index={idx}
                           onPress={openInfoCard}
-                          cardSize={CARD_SIZE}
+                          isBeingWatered={isBeingWatered}
                         />
                       ) : (
                         <View style={{ width: CARD_SIZE, height: CARD_SIZE }} />
-                      )}
-                      {/* Blue highlight when sprinkler hovers over a thirsty plant */}
-                      {isBeingWatered && (
-                        <View style={[styles.waterHighlight, { height: CARD_SIZE }]} />
                       )}
                     </View>
                   );
@@ -417,9 +434,25 @@ const HomeScreen: React.FC = () => {
         </ScrollView>
       </View>
 
-      {/* Garden footer */}
-      <View style={styles.footer}>
-        <Text style={styles.footerTitle}>Garden</Text>
+      {/* Garden footer — fence covers the top edge, buttons + sprinkler sit in front */}
+      <View style={[styles.footer, { paddingBottom: insets.bottom + 8 }]}>
+
+        {/* Fence: spans full width, overflows upward to cover the plants/footer border */}
+        <View style={styles.fenceWrapper} pointerEvents="none">
+          <Fence width={SCREEN_WIDTH} height={104} />
+        </View>
+
+        {/* Flowers: sit at the base of the fence pickets */}
+        <View style={styles.flowersRow} pointerEvents="none">
+          <Flower width={57} height={37} />
+          <Flower width={48} height={31} />
+          <Flower width={57} height={37} />
+          <Flower width={44} height={29} />
+          <Flower width={57} height={37} />
+          <Flower width={50} height={33} />
+        </View>
+
+        {/* Buttons row: Add | Sprinkler (draggable) | Clock — in front of fence */}
         <View style={styles.footerButtons}>
           {/* Add Plant button */}
           <TouchableOpacity
@@ -432,35 +465,22 @@ const HomeScreen: React.FC = () => {
             <Text style={styles.footerBtnLabel}>Add</Text>
           </TouchableOpacity>
 
+          {/* Sprinkler — draggable, between the two buttons */}
+          <View
+            style={styles.sprinklerInFooter}
+            {...panResponder.panHandlers}
+          >
+            <Sprinkler width={SPRINKLER_SIZE} height={SPRINKLER_SIZE} />
+          </View>
+
+          {/* Clock / notification time button */}
           <TouchableOpacity
             style={styles.footerBtn}
             onPress={() => setTimePickerVisible(true)}
             activeOpacity={0.7}
           >
-            <Text style={styles.footerBtnEmoji}>🕐</Text>
-            <Text style={styles.footerBtnLabel}>{formatHour(notifHour)}</Text>
-          </TouchableOpacity>
-
-          {/* Draggable sprinkler */}
-          <View
-            style={[
-              styles.footerBtn,
-              isDragging && styles.footerBtnDragging,
-            ]}
-            {...panResponder.panHandlers}
-          >
-            <Text style={styles.footerBtnEmoji}>🚿</Text>
-            <Text style={styles.footerBtnLabel}>Water</Text>
-          </View>
-
-          {/* Test notification button */}
-          <TouchableOpacity
-            style={styles.footerBtn}
-            onPress={() => sendTestNotification()}
-            activeOpacity={0.7}
-          >
-            <Text style={styles.footerBtnEmoji}>🔔</Text>
-            <Text style={styles.footerBtnLabel}>Test</Text>
+            <Text style={styles.footerBtnEmoji}>⏰</Text>
+            <Text style={styles.footerBtnLabel}>{formatTime(notifHour, notifMinute)}</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -469,12 +489,12 @@ const HomeScreen: React.FC = () => {
       {isDragging && (
         <Animated.View
           style={[
-            styles.floatingSprinkler,
+            styles.floatingSprinklerActive,
             { left: dragX, top: dragY },
           ]}
           pointerEvents="none"
         >
-          <Text style={styles.floatingEmoji}>🚿</Text>
+          <Sprinkler width={SPRINKLER_SIZE} height={SPRINKLER_SIZE} />
           {/* Water drops */}
           {dropAnims.map((drop, i) => (
             <Animated.View
@@ -507,6 +527,7 @@ const HomeScreen: React.FC = () => {
           plant={selectedPlant}
           onClose={() => setInfoCardVisible(false)}
           onSaveName={handleInfoSaveName}
+          onSaveLastWatered={handleInfoSaveLastWatered}
           onDelete={handleInfoDelete}
         />
       )}
@@ -514,6 +535,7 @@ const HomeScreen: React.FC = () => {
       <NotificationTimePicker
         visible={timePickerVisible}
         currentHour={notifHour}
+        currentMinute={notifMinute}
         onSelect={handleTimeChange}
         onClose={() => setTimePickerVisible(false)}
       />
@@ -521,12 +543,12 @@ const HomeScreen: React.FC = () => {
   );
 };
 
-/* ─── styles ──────────────────────────────────────────────────────────────── */
+/* ─── styles ─── */
 
 const styles = StyleSheet.create({
   safe: {
     flex: 1,
-    backgroundColor: '#F0F7F2',
+    backgroundColor: '#D8F3DC',
   },
   header: {
     flexDirection: 'row',
@@ -535,6 +557,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: H_PADDING,
     paddingTop: 20,
     paddingBottom: 16,
+    backgroundColor: '#D8F3DC',
   },
   appName: {
     fontSize: 30,
@@ -565,6 +588,7 @@ const styles = StyleSheet.create({
   },
   plantsArea: {
     flex: 1,
+    backgroundColor: '#D8F3DC',
   },
   shelfSection: {
     alignItems: 'center',
@@ -583,54 +607,54 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
   },
 
-  /* water highlight on the plant card being targeted */
-  waterHighlight: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(79, 195, 247, 0.25)',
-    borderRadius: 18,
-    borderWidth: 2,
-    borderColor: 'rgba(79, 195, 247, 0.5)',
-  },
-
   /* footer */
   footer: {
     height: FOOTER_HEIGHT,
     backgroundColor: '#D8F3DC',
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    paddingHorizontal: H_PADDING,
-    paddingTop: 16,
+    overflow: 'visible',   // let fence bleed upward
     alignItems: 'center',
+    justifyContent: 'flex-end',
+    paddingBottom: 0,
   },
-  footerTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#1C3D1C',
-    marginBottom: 12,
+  fenceWrapper: {
+    position: 'absolute',
+    top: -36,             // bleed 36px upward into the plants area
+    left: 0,
+    right: 0,
+    zIndex: 1,
+  },
+  flowersRow: {
+    position: 'absolute',
+    top: 52,              // bottom of fence pickets, above rails
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    paddingHorizontal: 12,
+    zIndex: 2,
   },
   footerButtons: {
     flexDirection: 'row',
-    gap: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 16,
+    zIndex: 10,
+    elevation: 10,
+    marginBottom: 12,
   },
   footerBtn: {
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#FFFFFF',
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    elevation: 4,
+    width: 68,
+    height: 68,
+    borderRadius: 34,
+    elevation: 6,
+    zIndex: 10,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.12,
-    shadowRadius: 6,
-  },
-  footerBtnDragging: {
-    opacity: 0.3,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
   },
   footerBtnDisabled: {
     opacity: 0.5,
@@ -644,9 +668,20 @@ const styles = StyleSheet.create({
     color: '#2D6A4F',
     marginTop: 2,
   },
+  sprinklerInFooter: {
+    zIndex: 10,
+    elevation: 10,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 40,
+    padding: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+  },
 
-  /* floating sprinkler during drag */
-  floatingSprinkler: {
+  /* active floating sprinkler during drag */
+  floatingSprinklerActive: {
     position: 'absolute',
     width: SPRINKLER_SIZE,
     height: SPRINKLER_SIZE,
@@ -654,9 +689,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     zIndex: 999,
     elevation: 20,
-  },
-  floatingEmoji: {
-    fontSize: 38,
   },
 
   /* individual water drop */

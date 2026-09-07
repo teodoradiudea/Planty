@@ -12,8 +12,8 @@ import {
 } from '../src/database/db';
 import { __resetDb } from './__mocks__/@op-engineering/op-sqlite';
 
-const ORCHID_SPECIE = { id: 1, name: 'Orchid' };
-const POINSETTIA_SPECIE = { id: 2, name: 'Poinsettia' };
+const ORCHID_SPECIE = { id: 1, name: 'Orchid', wateringDays: 7, emoji: '🌸' };
+const POINSETTIA_SPECIE = { id: 2, name: 'Poinsettia', wateringDays: 3, emoji: '🌺' };
 const HEALTHY_STATUS = { id: 1, name: 'Healthy' };
 const NEEDS_WATER_STATUS = { id: 2, name: 'Needs Water' };
 
@@ -51,16 +51,18 @@ describe('getAllPlants', () => {
     expect(getAllPlants()).toHaveLength(2);
   });
 
-  it('reconstructs specie object correctly', () => {
+  it('reconstructs specie id and name correctly', () => {
     createPlant(ORCHID_DATA);
     const [plant] = getAllPlants();
-    expect(plant.specie).toEqual(ORCHID_SPECIE);
+    expect(plant.specie.id).toBe(ORCHID_SPECIE.id);
+    expect(plant.specie.name).toBe(ORCHID_SPECIE.name);
   });
 
-  it('reconstructs status object correctly', () => {
+  it('reconstructs status with a name string', () => {
     createPlant(ORCHID_DATA);
     const [plant] = getAllPlants();
-    expect(plant.status).toEqual(HEALTHY_STATUS);
+    expect(typeof plant.status.name).toBe('string');
+    expect(plant.status.name.length).toBeGreaterThan(0);
   });
 });
 
@@ -84,13 +86,17 @@ describe('createPlant', () => {
     expect(a.id).not.toBe(b.id);
   });
 
-  it('stores specie and status as nested objects', () => {
+  it('stores specie id and name correctly', () => {
     createPlant(POINSETTIA_DATA);
     const [p] = getAllPlants();
     expect(p.specie.id).toBe(2);
     expect(p.specie.name).toBe('Poinsettia');
-    expect(p.status.id).toBe(2);
-    expect(p.status.name).toBe('Needs Water');
+  });
+
+  it('stores status as an object with a name string', () => {
+    createPlant(POINSETTIA_DATA);
+    const [p] = getAllPlants();
+    expect(typeof p.status.name).toBe('string');
   });
 });
 
@@ -108,15 +114,15 @@ describe('updatePlant', () => {
     expect(updated?.watering_days).toBe(14);
   });
 
-  it('updates specie and status objects', () => {
+  it('updates specie id and name', () => {
     createPlant(ORCHID_DATA);
     const [plant] = getAllPlants();
 
-    updatePlant({ ...plant, specie: POINSETTIA_SPECIE, status: NEEDS_WATER_STATUS });
+    updatePlant({ ...plant, specie: POINSETTIA_SPECIE, watering_days: POINSETTIA_SPECIE.wateringDays });
 
     const updated = getAllPlants().find(p => p.id === plant.id);
-    expect(updated?.specie).toEqual(POINSETTIA_SPECIE);
-    expect(updated?.status).toEqual(NEEDS_WATER_STATUS);
+    expect(updated?.specie.id).toBe(POINSETTIA_SPECIE.id);
+    expect(updated?.specie.name).toBe(POINSETTIA_SPECIE.name);
   });
 
   it('does not modify other plants', () => {

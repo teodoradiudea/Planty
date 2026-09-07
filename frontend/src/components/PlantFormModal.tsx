@@ -3,7 +3,6 @@ import {
   Alert,
   KeyboardAvoidingView,
   Modal,
-  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -11,12 +10,8 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import {
-  AVAILABLE_SPECIES,
-  AVAILABLE_STATUSES,
-  SPECIE_EMOJI,
-  STATUS_COLOR,
-} from '../constants/plantOptions';
+import { AVAILABLE_SPECIES } from '../constants/plantOptions';
+import { computeStatus } from '../services/statusComputer';
 import type { Plant, PlantFormData } from '../types/Plant';
 
 interface PlantFormModalProps {
@@ -49,13 +44,17 @@ const dateLabelStr = (daysAgo: number): string => {
 };
 
 /** Returns a fresh default form — called each time the modal opens */
-const makeDefaultForm = (): PlantFormData => ({
-  name: '',
-  specie: AVAILABLE_SPECIES[0],
-  status: AVAILABLE_STATUSES[0],
-  last_watered: localDateStr(0),
-  watering_days: 7,
-});
+const makeDefaultForm = (): PlantFormData => {
+  const specie = AVAILABLE_SPECIES[0];
+  const last_watered = localDateStr(0);
+  return {
+    name: '',
+    specie,
+    status: computeStatus(last_watered, specie.wateringDays),
+    last_watered,
+    watering_days: specie.wateringDays,
+  };
+};
 
 const PlantFormModal: React.FC<PlantFormModalProps> = ({
   visible,
@@ -88,11 +87,15 @@ const PlantFormModal: React.FC<PlantFormModalProps> = ({
       Alert.alert('Missing Field', 'Please enter a plant name.');
       return;
     }
-    if (!form.watering_days || isNaN(form.watering_days) || form.watering_days < 1) {
+    if (!form.watering_days || form.watering_days < 1) {
       Alert.alert('Missing Field', 'Please enter how often to water (days).');
       return;
     }
-    onSave(form);
+    try {
+      onSave(form);
+    } catch (err: any) {
+      Alert.alert('Save Error', err?.message ?? String(err));
+    }
   };
 
   const handleDelete = () => {
@@ -111,7 +114,6 @@ const PlantFormModal: React.FC<PlantFormModalProps> = ({
     );
   };
 
-  // Memoised — the date list is stable for the lifetime of the component
   const recentDays = useMemo(() => {
     return Array.from({ length: MAX_DAYS_AGO + 1 }, (_, i) => ({
       date: localDateStr(i),
@@ -128,7 +130,7 @@ const PlantFormModal: React.FC<PlantFormModalProps> = ({
     >
       <View style={styles.backdrop}>
         <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          behavior="padding"
           style={styles.kav}
         >
           <View style={styles.sheet}>
@@ -163,41 +165,22 @@ const PlantFormModal: React.FC<PlantFormModalProps> = ({
               <Text style={styles.label}>Species</Text>
               <View style={styles.segmentRow}>
                 {AVAILABLE_SPECIES.map(specie => {
-                  const emoji = SPECIE_EMOJI[specie.name.toLowerCase()] ?? '🌿';
                   const active = form.specie.id === specie.id;
                   return (
                     <TouchableOpacity
                       key={specie.id}
                       style={[styles.segmentBtn, active && styles.segmentBtnActive]}
-                      onPress={() => setForm(f => ({ ...f, specie }))}
+                      onPress={() => setForm(f => ({
+                        ...f,
+                        specie,
+                        watering_days: specie.wateringDays,
+                        status: computeStatus(f.last_watered, specie.wateringDays),
+                      }))}
                     >
                       <Text
                         style={[styles.segmentText, active && styles.segmentTextActive]}
                       >
-                        {emoji}  {specie.name}
-                      </Text>
-                    </TouchableOpacity>
-                  );
-                })}
-              </View>
-
-              {/* Status */}
-              <Text style={styles.label}>Status</Text>
-              <View style={styles.statusRow}>
-                {AVAILABLE_STATUSES.map(status => {
-                  const active = form.status.id === status.id;
-                  const dotColor = STATUS_COLOR[status.name.toLowerCase()] ?? '#9E9E9E';
-                  return (
-                    <TouchableOpacity
-                      key={status.id}
-                      style={[styles.statusBtn, active && { borderColor: dotColor, backgroundColor: dotColor + '18' }]}
-                      onPress={() => setForm(f => ({ ...f, status }))}
-                    >
-                      <View style={[styles.statusDot, { backgroundColor: dotColor }]} />
-                      <Text
-                        style={[styles.statusBtnText, active && { color: dotColor, fontWeight: '700' }]}
-                      >
-                        {status.name}
+                        {specie.emoji}  {specie.name}
                       </Text>
                     </TouchableOpacity>
                   );
@@ -218,7 +201,11 @@ const PlantFormModal: React.FC<PlantFormModalProps> = ({
                       styles.presetBtn,
                       form.last_watered === day.date && styles.presetBtnActive,
                     ]}
-                    onPress={() => setForm(f => ({ ...f, last_watered: day.date }))}
+                    onPress={() => setForm(f => ({
+                      ...f,
+                      last_watered: day.date,
+                      status: computeStatus(day.date, f.watering_days),
+                    }))}
                   >
                     <Text
                       style={[
@@ -241,7 +228,12 @@ const PlantFormModal: React.FC<PlantFormModalProps> = ({
                 value={form.watering_days > 0 ? form.watering_days.toString() : ''}
                 onChangeText={v => {
                   const parsed = parseInt(v, 10);
-                  setForm(f => ({ ...f, watering_days: isNaN(parsed) ? 0 : parsed }));
+                  const newDays = isNaN(parsed) ? 0 : parsed;
+                  setForm(f => ({
+                    ...f,
+                    watering_days: newDays,
+                    status: computeStatus(f.last_watered, newDays),
+                  }));
                 }}
                 keyboardType="numeric"
               />
@@ -362,33 +354,6 @@ const styles = StyleSheet.create({
   },
   segmentTextActive: {
     color: '#FFFFFF',
-  },
-  // Status selector
-  statusRow: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  statusBtn: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    paddingVertical: 11,
-    borderRadius: 14,
-    borderWidth: 1.5,
-    borderColor: '#C8E6D4',
-    backgroundColor: '#FAFFFE',
-  },
-  statusDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-  },
-  statusBtnText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#5A7A5A',
   },
   // Date presets
   presetRow: {

@@ -14,7 +14,7 @@ jest.mock('@op-engineering/op-sqlite', () =>
 const MOCK_PLANT = {
   id: 'plant-1',
   name: 'My Orchid',
-  specie: { id: 1, name: 'Orchid' },
+  specie: { id: 1, name: 'Orchid', wateringDays: 7, emoji: '🌸' },
   status: { id: 1, name: 'Healthy' },
   last_watered: '2026-08-15',
   watering_days: 7,
@@ -119,13 +119,11 @@ describe('PlantFormModal', () => {
     });
   });
 
-  describe('Status selector', () => {
-    it('renders all available statuses', () => {
+  describe('Watering days input', () => {
+    it('renders the watering days field', () => {
       const { renderer } = renderModal();
       const text = JSON.stringify(renderer.toJSON());
-      expect(text).toContain('Healthy');
-      expect(text).toContain('Needs Water');
-      expect(text).toContain('Wilting');
+      expect(text).toContain('Water Every');
     });
   });
 

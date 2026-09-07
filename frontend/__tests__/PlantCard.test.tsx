@@ -5,13 +5,13 @@
 import React from 'react';
 import { TouchableOpacity } from 'react-native';
 import { act, create, ReactTestRenderer } from 'react-test-renderer';
-import PlantCard, { CARD_COLORS } from '../src/components/PlantCard';
+import PlantCard from '../src/components/PlantCard';
 import type { Plant } from '../src/types/Plant';
 
 const ORCHID: Plant = {
   id: 'p1',
   name: 'Purple Queen',
-  specie: { id: 1, name: 'Orchid' },
+  specie: { id: 1, name: 'Orchid', wateringDays: 7, emoji: '🌸' },
   status: { id: 1, name: 'Healthy' },
   last_watered: '2026-08-15',
   watering_days: 7,
@@ -20,22 +20,30 @@ const ORCHID: Plant = {
 const POINSETTIA: Plant = {
   id: 'p2',
   name: 'Red Star',
-  specie: { id: 2, name: 'Poinsettia' },
+  specie: { id: 2, name: 'Poinsettia', wateringDays: 3, emoji: '🌺' },
   status: { id: 2, name: 'Needs Water' },
   last_watered: '2026-08-14',
   watering_days: 3,
 };
 
+const WILTING: Plant = {
+  id: 'p3',
+  name: 'Sad Fern',
+  specie: { id: 7, name: 'Spider Plant', wateringDays: 5, emoji: '🌱' },
+  status: { id: 3, name: 'Wilting' },
+  last_watered: '2026-08-01',
+  watering_days: 5,
+};
+
 const renderCard = (
   plant: Plant,
-  index: number,
   onPress = jest.fn(),
-  cardSize = 100,
+  isBeingWatered = false,
 ): ReactTestRenderer => {
   let renderer!: ReactTestRenderer;
   act(() => {
     renderer = create(
-      <PlantCard plant={plant} index={index} onPress={onPress} cardSize={cardSize} />,
+      <PlantCard plant={plant} onPress={onPress} isBeingWatered={isBeingWatered} />,
     );
   });
   return renderer;
@@ -46,39 +54,25 @@ const renderCard = (
 describe('PlantCard', () => {
   describe('rendering', () => {
     it('renders the plant name', () => {
-      const renderer = renderCard(ORCHID, 0);
+      const renderer = renderCard(ORCHID);
       expect(JSON.stringify(renderer.toJSON())).toContain('Purple Queen');
     });
 
     it('renders orchid emoji 🌸 for Orchid specie', () => {
-      const renderer = renderCard(ORCHID, 0);
+      const renderer = renderCard(ORCHID);
       expect(JSON.stringify(renderer.toJSON())).toContain('🌸');
     });
 
     it('renders poinsettia emoji 🌺 for Poinsettia specie', () => {
-      const renderer = renderCard(POINSETTIA, 1);
+      const renderer = renderCard(POINSETTIA);
       expect(JSON.stringify(renderer.toJSON())).toContain('🌺');
-    });
-
-    it('renders the status label', () => {
-      const renderer = renderCard(ORCHID, 0);
-      expect(JSON.stringify(renderer.toJSON())).toContain('Healthy');
-    });
-
-    it('applies the correct card width from cardSize prop', () => {
-      const renderer = renderCard(ORCHID, 0, jest.fn(), 120);
-      const root = renderer.toJSON() as any;
-      const styleArr: any[] = Array.isArray(root.props.style)
-        ? root.props.style
-        : [root.props.style];
-      expect(styleArr.some((s: any) => s && s.width === 120)).toBe(true);
     });
   });
 
   describe('interaction', () => {
     it('calls onPress with the plant object when tapped', () => {
       const onPress = jest.fn();
-      const renderer = renderCard(ORCHID, 0, onPress);
+      const renderer = renderCard(ORCHID, onPress);
       act(() => {
         renderer.root.findByType(TouchableOpacity).props.onPress();
       });
@@ -87,19 +81,29 @@ describe('PlantCard', () => {
     });
   });
 
-  describe('color palette', () => {
-    it('has 9 distinct colors', () => {
-      expect(CARD_COLORS).toHaveLength(9);
+  describe('status aura', () => {
+    it('shows no aura for a healthy plant when not being watered', () => {
+      const renderer = renderCard(ORCHID);
+      const json = JSON.stringify(renderer.toJSON());
+      // Healthy plants have no aura colour — blue/red/orange tints should be absent
+      expect(json).not.toContain('rgba(214, 40, 57');  // red (wilting)
+      expect(json).not.toContain('rgba(224, 122, 95'); // orange (needs water)
+      expect(json).not.toContain('rgba(79, 195, 247'); // blue (watering)
     });
 
-    it('all entries are valid hex colors', () => {
-      CARD_COLORS.forEach(color => {
-        expect(color).toMatch(/^#[0-9A-Fa-f]{6}$/);
-      });
+    it('shows a red aura for a wilting plant', () => {
+      const renderer = renderCard(WILTING);
+      expect(JSON.stringify(renderer.toJSON())).toContain('rgba(214, 40, 57');
     });
 
-    it('wraps back to index 0 color when index equals palette length', () => {
-      expect(CARD_COLORS[9 % CARD_COLORS.length]).toBe(CARD_COLORS[0]);
+    it('shows an orange aura for a plant that needs water', () => {
+      const renderer = renderCard(POINSETTIA);
+      expect(JSON.stringify(renderer.toJSON())).toContain('rgba(224, 122, 95');
+    });
+
+    it('shows a blue aura when isBeingWatered is true regardless of status', () => {
+      const renderer = renderCard(ORCHID, jest.fn(), true);
+      expect(JSON.stringify(renderer.toJSON())).toContain('rgba(79, 195, 247');
     });
   });
 });

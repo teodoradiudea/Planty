@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import {
   Alert,
   Modal,
-  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -12,10 +11,9 @@ import {
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import Icon from 'react-native-vector-icons/Ionicons';
-import {
-  AVAILABLE_SPECIES,
-  SPECIE_EMOJI,
-} from '../constants/plantOptions';
+import { AVAILABLE_SPECIES } from '../constants/plantOptions';
+import { FONT_FAMILY } from '../constants/theme';
+import { localDateStr } from '../utils/formatting';
 import { computeStatus } from '../services/statusComputer';
 import type { PlantFormData } from '../types/Plant';
 
@@ -27,17 +25,6 @@ interface AddPlantCardProps {
 
 const MAX_DAYS_AGO = 7;
 
-/** Returns a local YYYY-MM-DD string for `daysAgo` days before today */
-const localDateStr = (daysAgo: number): string => {
-  const d = new Date();
-  d.setDate(d.getDate() - daysAgo);
-  return [
-    d.getFullYear(),
-    String(d.getMonth() + 1).padStart(2, '0'),
-    String(d.getDate()).padStart(2, '0'),
-  ].join('-');
-};
-
 const dateLabelStr = (daysAgo: number): string => {
   if (daysAgo === 0) { return 'Today'; }
   if (daysAgo === 1) { return 'Yesterday'; }
@@ -47,14 +34,14 @@ const dateLabelStr = (daysAgo: number): string => {
 };
 
 const makeDefaultForm = (): PlantFormData => {
+  const firstSpecie = AVAILABLE_SPECIES[0];
   const lastWatered = localDateStr(0);
-  const wateringDays = 7;
   return {
     name: '',
-    specie: AVAILABLE_SPECIES[0],
-    status: computeStatus(lastWatered, wateringDays),
+    specie: firstSpecie,
+    status: computeStatus(lastWatered, firstSpecie.wateringDays),
     last_watered: lastWatered,
-    watering_days: wateringDays,
+    watering_days: firstSpecie.wateringDays,
   };
 };
 
@@ -69,7 +56,7 @@ const AddPlantCard: React.FC<AddPlantCardProps> = ({ visible, onSave, onClose })
     if (visible) {
       setForm(makeDefaultForm());
       setDaysAgo(0);
-      setIsEditingName(true);   // open keyboard immediately
+      setIsEditingName(true);
       setShowSpeciePicker(false);
     }
   }, [visible]);
@@ -80,15 +67,11 @@ const AddPlantCard: React.FC<AddPlantCardProps> = ({ visible, onSave, onClose })
       return;
     }
     try {
-      console.log('[AddPlantCard] calling onSave with form:', JSON.stringify(form));
       onSave(form);
     } catch (err: any) {
       Alert.alert('Save Error', err?.message ?? String(err));
     }
   };
-
-
-  const selectedEmoji = SPECIE_EMOJI[form.specie.name.toLowerCase()] ?? '🌿';
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
@@ -105,17 +88,16 @@ const AddPlantCard: React.FC<AddPlantCardProps> = ({ visible, onSave, onClose })
           >
             {/* ── Header ── */}
             <View style={styles.header}>
-              <Text style={styles.cancelText}>Cancel</Text>
-              <TouchableOpacity onPress={onClose} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-                <Icon name="close" size={12} color="#fff" />
+              <TouchableOpacity onPress={onClose} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} style={styles.closeIconBtn}>
+                <Icon name="close" size={16} color="#fff" />
               </TouchableOpacity>
             </View>
 
-            {/* ── Plant Image ── */}
+            {/* ── Plant Image + Name ── */}
             <View style={styles.content}>
               <View style={styles.imageContainer}>
                 <View style={styles.plantImageBox}>
-                  <Text style={styles.plantEmoji}>{selectedEmoji}</Text>
+                  <Text style={styles.plantEmoji}>{form.specie.emoji}</Text>
                 </View>
 
                 {/* Plant Name – tap pencil to edit */}
@@ -130,7 +112,6 @@ const AddPlantCard: React.FC<AddPlantCardProps> = ({ visible, onSave, onClose })
                       onChangeText={v => setForm(f => ({ ...f, name: v }))}
                       onSubmitEditing={() => setIsEditingName(false)}
                       returnKeyType="done"
-                      blurOnSubmit={false}
                     />
                   ) : (
                     <TouchableOpacity
@@ -140,7 +121,7 @@ const AddPlantCard: React.FC<AddPlantCardProps> = ({ visible, onSave, onClose })
                       <Text style={styles.plantName}>
                         {form.name || 'Plant Name'}
                       </Text>
-                      <Icon name="pencil" size={8} color="#68A64D" />
+                      <Icon name="pencil" size={10} color="#68A64D" />
                     </TouchableOpacity>
                   )}
                 </View>
@@ -154,10 +135,15 @@ const AddPlantCard: React.FC<AddPlantCardProps> = ({ visible, onSave, onClose })
                   onPress={() => setShowSpeciePicker(true)}
                 >
                   <Text style={styles.selectText}>
-                    {form.specie ? form.specie.name : 'Select'}
+                    {form.specie.name}
                   </Text>
                 </TouchableOpacity>
               </View>
+
+              {/* Watering days auto-derived — shown read-only */}
+              <Text style={styles.wateringHint}>
+                💧 every {form.watering_days} days
+              </Text>
 
               {/* ── Last Watered ── */}
               <View style={styles.wateredRow}>
@@ -217,7 +203,12 @@ const AddPlantCard: React.FC<AddPlantCardProps> = ({ visible, onSave, onClose })
         visible={showSpeciePicker}
         selected={form.specie}
         onSelect={specie => {
-          setForm(f => ({ ...f, specie }));
+          setForm(f => ({
+            ...f,
+            specie,
+            watering_days: specie.wateringDays,
+            status: computeStatus(f.last_watered, specie.wateringDays),
+          }));
           setShowSpeciePicker(false);
         }}
         onClose={() => setShowSpeciePicker(false)}
@@ -246,7 +237,6 @@ const SpeciePicker: React.FC<SpeciePickerProps> = ({
         <Text style={styles.pickerTitle}>Choose a Species</Text>
         <ScrollView>
           {AVAILABLE_SPECIES.map(specie => {
-            const emoji = SPECIE_EMOJI[specie.name.toLowerCase()] ?? '🌿';
             const active = selected?.id === specie.id;
             return (
               <TouchableOpacity
@@ -254,10 +244,13 @@ const SpeciePicker: React.FC<SpeciePickerProps> = ({
                 style={[styles.pickerRow, active && styles.pickerRowActive]}
                 onPress={() => onSelect(specie)}
               >
-                <Text style={styles.pickerEmoji}>{emoji}</Text>
-                <Text style={[styles.pickerLabel, active && styles.pickerLabelActive]}>
-                  {specie.name}
-                </Text>
+                <Text style={styles.pickerEmoji}>{specie.emoji}</Text>
+                <View style={styles.pickerLabelGroup}>
+                  <Text style={[styles.pickerLabel, active && styles.pickerLabelActive]}>
+                    {specie.name}
+                  </Text>
+                  <Text style={styles.pickerSub}>every {specie.wateringDays} days</Text>
+                </View>
                 {active && <Icon name="checkmark" size={16} color="#68A64D" />}
               </TouchableOpacity>
             );
@@ -277,12 +270,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   card: {
-    width: 156,
-    height: 205,
-    borderRadius: 9,
-    paddingHorizontal: 12,
-    paddingTop: 10,
-    paddingBottom: 14,
+    width: 320,
+    borderRadius: 18,
+    paddingHorizontal: 20,
+    paddingTop: 14,
+    paddingBottom: 20,
     elevation: 12,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 6 },
@@ -293,116 +285,124 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'flex-end',
     alignItems: 'center',
-    gap: 6,
-    marginBottom: 8,
+    marginBottom: 12,
   },
-  cancelText: {
-    fontSize: 8,
-    color: '#fff',
-    fontFamily: Platform.OS === 'ios' ? 'Inter' : undefined,
+  closeIconBtn: {
+    backgroundColor: 'rgba(0,0,0,0.2)',
+    borderRadius: 12,
+    width: 26,
+    height: 26,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   content: {
     alignItems: 'center',
-    gap: 8,
-    flex: 1,
+    gap: 12,
   },
   imageContainer: {
     alignItems: 'center',
   },
   plantImageBox: {
-    width: 66,
-    height: 74,
-    borderRadius: 9,
+    width: 90,
+    height: 90,
+    borderRadius: 16,
     backgroundColor: '#fff',
     justifyContent: 'center',
     alignItems: 'center',
   },
   plantEmoji: {
-    fontSize: 36,
+    fontSize: 46,
   },
   nameRow: {
-    marginTop: 4,
+    marginTop: 8,
   },
   nameRowInner: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: 6,
   },
   plantName: {
-    fontSize: 12,
+    fontSize: 16,
     color: '#fff',
-    fontFamily: Platform.OS === 'ios' ? 'Inter' : undefined,
+    fontFamily: FONT_FAMILY,
+    fontWeight: '600',
   },
   nameInput: {
-    fontSize: 12,
+    fontSize: 16,
     color: '#fff',
-    borderBottomWidth: 1,
+    borderBottomWidth: 1.5,
     borderBottomColor: 'rgba(255,255,255,0.6)',
-    minWidth: 80,
-    paddingVertical: 0,
-    fontFamily: Platform.OS === 'ios' ? 'Inter' : undefined,
+    minWidth: 120,
+    paddingVertical: 2,
+    fontFamily: FONT_FAMILY,
   },
   specieRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: 8,
   },
   label: {
-    fontSize: 10,
+    fontSize: 12,
     color: '#fff',
-    fontFamily: Platform.OS === 'ios' ? 'Inter' : undefined,
+    fontFamily: FONT_FAMILY,
   },
   selectBadge: {
     backgroundColor: 'rgba(158, 162, 159, 0.58)',
-    borderRadius: 2,
+    borderRadius: 4,
     borderWidth: 1,
     borderColor: '#586458',
-    paddingHorizontal: 6,
-    paddingVertical: 1,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
   },
   selectText: {
-    fontSize: 10,
+    fontSize: 12,
     color: '#fff',
-    fontFamily: Platform.OS === 'ios' ? 'Inter' : undefined,
+    fontFamily: FONT_FAMILY,
+  },
+  wateringHint: {
+    fontSize: 11,
+    color: 'rgba(255,255,255,0.8)',
+    fontFamily: FONT_FAMILY,
   },
   wateredRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
+    gap: 8,
   },
   arrowText: {
-    fontSize: 9,
+    fontSize: 11,
     color: 'rgba(255,255,255,0.85)',
   },
   arrowDisabled: {
     opacity: 0.25,
   },
   dateLabel: {
-    fontSize: 8,
+    fontSize: 11,
     color: '#fff',
     textAlign: 'center',
-    minWidth: 52,
-    fontFamily: Platform.OS === 'ios' ? 'Inter' : undefined,
+    minWidth: 70,
+    fontFamily: FONT_FAMILY,
   },
   smallLabel: {
-    fontSize: 8,
+    fontSize: 11,
     color: '#fff',
-    fontFamily: Platform.OS === 'ios' ? 'Inter' : undefined,
+    fontFamily: FONT_FAMILY,
   },
   saveButton: {
     backgroundColor: '#68A64D',
-    borderRadius: 3,
+    borderRadius: 8,
     borderWidth: 1,
     borderColor: '#ABCB9F',
     alignSelf: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 2,
-    marginTop: 8,
+    paddingHorizontal: 32,
+    paddingVertical: 8,
+    marginTop: 16,
   },
   saveText: {
-    fontSize: 8,
+    fontSize: 13,
     color: '#fff',
-    fontFamily: Platform.OS === 'ios' ? 'Inter' : undefined,
+    fontWeight: '700',
+    fontFamily: FONT_FAMILY,
   },
   // Specie Picker
   pickerBackdrop: {
@@ -412,12 +412,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   pickerSheet: {
-    width: 240,
+    width: 280,
     backgroundColor: '#fff',
     borderRadius: 16,
     paddingVertical: 12,
     paddingHorizontal: 4,
-    maxHeight: 320,
+    maxHeight: 400,
     elevation: 16,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 8 },
@@ -425,7 +425,7 @@ const styles = StyleSheet.create({
     shadowRadius: 16,
   },
   pickerTitle: {
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: '700',
     color: '#1C3D1C',
     textAlign: 'center',
@@ -436,7 +436,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingVertical: 12,
+    paddingVertical: 10,
     gap: 12,
     borderRadius: 12,
     marginHorizontal: 8,
@@ -447,8 +447,10 @@ const styles = StyleSheet.create({
   pickerEmoji: {
     fontSize: 22,
   },
-  pickerLabel: {
+  pickerLabelGroup: {
     flex: 1,
+  },
+  pickerLabel: {
     fontSize: 15,
     color: '#2D6A4F',
     fontWeight: '600',
@@ -456,6 +458,12 @@ const styles = StyleSheet.create({
   pickerLabelActive: {
     color: '#68A64D',
   },
+  pickerSub: {
+    fontSize: 11,
+    color: '#9E9E9E',
+    marginTop: 1,
+  },
 });
 
 export default AddPlantCard;
+

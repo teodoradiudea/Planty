@@ -1,8 +1,8 @@
 /**
  * Planty — Notification Service
  *
- * Schedules a daily local notification for each plant at 17:00 Romanian time
- * (Europe/Bucharest = UTC+2 in winter EET, UTC+3 in summer EEST).
+ * Schedules a local notification for each plant at the user-chosen hour
+ * using the device's local timezone.
  *
  * Each plant gets one scheduled notification keyed by its ID.
  * When a plant is added, renamed, or deleted the notification is
@@ -15,33 +15,12 @@ import notifee, {
   TimestampTrigger,
   TriggerType,
 } from '@notifee/react-native';
-import { getNotificationHour } from '../database/db';
+import { getNotificationHour, getNotificationMinute } from '../database/db';
 import type { Plant } from '../types/Plant';
 
 /* ─── constants ─────────────────────────────────────────────────────────── */
 
 export const CHANNEL_ID = 'planty-watering';
-
-/** UTC offset for Romania: +3h in summer (EEST), +2h in winter (EET) */
-const BUCHAREST_OFFSET_MS = (): number => {
-  // Determine whether Bucharest is currently on EEST (+3) or EET (+2)
-  // by checking what offset the Intl formatter gives for Europe/Bucharest.
-  try {
-    const now = new Date();
-    const formatter = new Intl.DateTimeFormat('en', {
-      timeZone: 'Europe/Bucharest',
-      timeZoneName: 'shortOffset',
-    });
-    const parts = formatter.formatToParts(now);
-    const tzPart = parts.find(p => p.type === 'timeZoneName')?.value ?? 'GMT+3';
-    // tzPart looks like "GMT+3" or "GMT+2"
-    const match = tzPart.match(/GMT([+-]\d+)/);
-    const hours = match ? parseInt(match[1], 10) : 3;
-    return hours * 60 * 60 * 1000;
-  } catch {
-    return 3 * 60 * 60 * 1000; // default to EEST
-  }
-};
 
 /* ─── helpers ────────────────────────────────────────────────────────────── */
 
@@ -60,20 +39,18 @@ const nextWateringDateStr = (lastWatered: string, wateringDays: number): string 
 };
 
 /**
- * Returns the UTC timestamp for the user-chosen notification hour on a given
- * YYYY-MM-DD date in the Europe/Bucharest timezone.
+ * Returns the device-local timestamp for the user-chosen notification hour+minute
+ * on a given YYYY-MM-DD date.
  */
-const atScheduledHourBucharest = (dateStr: string): number => {
+const atScheduledTime = (dateStr: string): number => {
   const [y, m, d] = dateStr.split('-').map(Number);
   const hour = getNotificationHour();
-  // Build the timestamp as if it's midnight UTC for that date,
-  // then shift to the chosen hour in Bucharest time.
-  const midnightUtc = Date.UTC(y, m - 1, d, 0, 0, 0, 0);
-  const offset = BUCHAREST_OFFSET_MS();
-  return midnightUtc + (hour * 60 * 60 * 1000) - offset;
+  const minute = getNotificationMinute();
+  return new Date(y, m - 1, d, hour, minute, 0, 0).getTime();
 };
 
 const notificationId = (plantId: string) => `plant-${plantId}`;
+
 
 /* ─── setup ──────────────────────────────────────────────────────────────── */
 
@@ -113,7 +90,7 @@ export const requestNotificationPermission = async (): Promise<boolean> => {
  */
 export const schedulePlantNotification = async (plant: Plant): Promise<void> => {
   const nextDate = nextWateringDateStr(plant.last_watered, plant.watering_days);
-  const fireAt = atScheduledHourBucharest(nextDate);
+  const fireAt = atScheduledTime(nextDate);
 
   if (fireAt <= Date.now()) {
     // Due date has already passed — cancel any stale notification and bail
@@ -133,8 +110,8 @@ export const schedulePlantNotification = async (plant: Plant): Promise<void> => 
   await notifee.createTriggerNotification(
     {
       id: notificationId(plant.id),
-      title: '🌿 Time to water!',
-      body: `${plant.name} needs watering today. Give it some love! 💧`,
+      title: 'Time to water!',
+      body: `${plant.name} needs watering today. Give it some love!`,
       android: {
         channelId: CHANNEL_ID,
         importance: AndroidImportance.HIGH,

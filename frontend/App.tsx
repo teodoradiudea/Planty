@@ -4,7 +4,7 @@
  */
 
 import React, { useEffect } from 'react';
-import { StatusBar } from 'react-native';
+import { Alert, StatusBar } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import HomeScreen from './src/screens/HomeScreen';
 import {
@@ -17,6 +17,14 @@ function App(): React.JSX.Element {
     // Set up the Android channel and request permission once on launch
     setupNotificationChannel()
       .then(() => requestNotificationPermission())
+      .then(granted => {
+        if (!granted) {
+          Alert.alert(
+            'Notifications Disabled',
+            'You will not receive watering reminders unless you enable notifications in settings.',
+          );
+        }
+      })
       .catch(err => console.warn('[App] notification setup error:', err));
   }, []);
 

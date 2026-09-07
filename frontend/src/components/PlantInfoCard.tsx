@@ -1,8 +1,7 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Alert,
   Modal,
-  Platform,
   StyleSheet,
   Text,
   TextInput,
@@ -10,7 +9,9 @@ import {
   View,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
-import { SPECIE_EMOJI, STATUS_COLOR } from '../constants/plantOptions';
+import { STATUS_COLOR, STATUS_COLOR_FALLBACK } from '../constants/plantOptions';
+import { FONT_FAMILY } from '../constants/theme';
+import { computeStatus } from '../services/statusComputer';
 import type { Plant } from '../types/Plant';
 
 /* ─── date helpers ──────────────────────────────────────────────────────── */
@@ -39,14 +40,37 @@ const relativeLabel = (dateStr: string): string => {
   return `${Math.abs(diffDays)} days ago`;
 };
 
+/** Returns next watering date as YYYY-MM-DD using local time */
 const nextWateringDate = (lastWatered: string, wateringDays: number): string => {
   const base = parseDate(lastWatered);
   base.setDate(base.getDate() + wateringDays);
-  return base.toISOString().split('T')[0];
+  return [
+    base.getFullYear(),
+    String(base.getMonth() + 1).padStart(2, '0'),
+    String(base.getDate()).padStart(2, '0'),
+  ].join('-');
 };
 
-const friendlyDate = (dateStr: string): string =>
-  parseDate(dateStr).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+/** Returns a local YYYY-MM-DD string for `daysAgo` days before today */
+const localDateStr = (daysAgo: number): string => {
+  const d = new Date();
+  d.setDate(d.getDate() - daysAgo);
+  return [
+    d.getFullYear(),
+    String(d.getMonth() + 1).padStart(2, '0'),
+    String(d.getDate()).padStart(2, '0'),
+  ].join('-');
+};
+
+const dateLabelStr = (daysAgo: number): string => {
+  if (daysAgo === 0) { return 'Today'; }
+  if (daysAgo === 1) { return 'Yesterday'; }
+  const d = new Date();
+  d.setDate(d.getDate() - daysAgo);
+  return d.toLocaleDateString('en', { weekday: 'short', month: 'short', day: 'numeric' });
+};
+
+const MAX_DAYS_AGO = 7;
 
 /* ─── props ─────────────────────────────────────────────────────────────── */
 
@@ -55,6 +79,7 @@ interface PlantInfoCardProps {
   visible: boolean;
   onClose: () => void;
   onSaveName: (newName: string) => void;
+  onSaveLastWatered: (newDate: string) => void;
   onDelete: () => void;
 }
 
@@ -65,21 +90,30 @@ const PlantInfoCard: React.FC<PlantInfoCardProps> = ({
   visible,
   onClose,
   onSaveName,
+  onSaveLastWatered,
   onDelete,
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [nameValue, setNameValue] = useState(plant.name);
   const inputRef = useRef<TextInput>(null);
 
-  // sync name when a different plant is opened
+  // last-watered editing state
+  const [wateredDaysAgo, setWateredDaysAgo] = useState(0);
+
+  // sync name + last-watered when a different plant is opened or modal re-opens
   useEffect(() => {
     setNameValue(plant.name);
     setIsEditing(false);
-  }, [plant.id, plant.name, visible]);
+    const diffMs = todayMidnight().getTime() - parseDate(plant.last_watered).getTime();
+    const diffDays = Math.round(diffMs / 86_400_000);
+    setWateredDaysAgo(Math.max(0, Math.min(diffDays, MAX_DAYS_AGO)));
+  }, [plant.id, plant.name, plant.last_watered, visible]);
+
+  // Derived: the last_watered date string based on current wateredDaysAgo
+  const lastWateredDate = useMemo(() => localDateStr(wateredDaysAgo), [wateredDaysAgo]);
 
   const startEditing = () => {
     setIsEditing(true);
-    // Give RN a tick to mount before focusing
     setTimeout(() => inputRef.current?.focus(), 50);
   };
 
@@ -106,9 +140,15 @@ const PlantInfoCard: React.FC<PlantInfoCardProps> = ({
     );
   };
 
-  const emoji = SPECIE_EMOJI[plant.specie.name.toLowerCase()] ?? '🌿';
-  const statusColor = STATUS_COLOR[plant.status.name.toLowerCase()] ?? '#52B788';
-  const nextDate = nextWateringDate(plant.last_watered, plant.watering_days);
+  const adjustWateredDays = (delta: number) => {
+    const next = Math.max(0, Math.min(wateredDaysAgo + delta, MAX_DAYS_AGO));
+    setWateredDaysAgo(next);
+    onSaveLastWatered(localDateStr(next));
+  };
+
+  const currentStatus = computeStatus(lastWateredDate, plant.watering_days);
+  const statusColor = STATUS_COLOR[currentStatus.name.toLowerCase()] ?? STATUS_COLOR_FALLBACK;
+  const nextDate = nextWateringDate(lastWateredDate, plant.watering_days);
 
   return (
     <Modal
@@ -117,13 +157,11 @@ const PlantInfoCard: React.FC<PlantInfoCardProps> = ({
       animationType="fade"
       onRequestClose={onClose}
     >
-      {/* Backdrop — tap outside to close */}
       <TouchableOpacity
         style={styles.backdrop}
         activeOpacity={1}
         onPress={onClose}
       >
-        {/* Card — absorbs taps so backdrop doesn't close */}
         <TouchableOpacity activeOpacity={1} onPress={() => {}}>
           <LinearGradient
             colors={['#68A74D', '#28401E']}
@@ -131,24 +169,19 @@ const PlantInfoCard: React.FC<PlantInfoCardProps> = ({
             end={{ x: 0.5, y: 1 }}
             style={styles.card}
           >
-            {/* ── Close ── */}
             <TouchableOpacity
               style={styles.closeButton}
               onPress={onClose}
-              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
             >
               <Text style={styles.closeIcon}>✕</Text>
             </TouchableOpacity>
 
-            {/* ── Content ── */}
             <View style={styles.content}>
-
-              {/* Emoji box */}
               <View style={styles.imagePlaceholder}>
-                <Text style={styles.plantEmoji}>{emoji}</Text>
+                <Text style={styles.plantEmoji}>{plant.specie.emoji}</Text>
               </View>
 
-              {/* Name row — static OR editing */}
               {isEditing ? (
                 <View style={styles.nameEditRow}>
                   <TextInput
@@ -161,7 +194,6 @@ const PlantInfoCard: React.FC<PlantInfoCardProps> = ({
                     selectTextOnFocus
                     maxLength={30}
                   />
-                  {/* Tick — save */}
                   <TouchableOpacity
                     onPress={commitName}
                     hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
@@ -179,35 +211,44 @@ const PlantInfoCard: React.FC<PlantInfoCardProps> = ({
                 </TouchableOpacity>
               )}
 
-              {/* Species + status dot */}
               <View style={styles.speciesRow}>
                 <Text style={styles.speciesText}>{plant.specie.name}</Text>
                 <View style={[styles.speciesDot, { backgroundColor: statusColor }]} />
               </View>
 
-              {/* Info block */}
               <View style={styles.infoBlock}>
                 <Text style={styles.infoText}>
-                  status:{' '}
-                  <Text style={[styles.infoText, { color: statusColor }]}>
-                    {plant.status.name}
-                  </Text>
+                  status: <Text style={[styles.infoText, { color: statusColor, fontWeight: '700' }]}>{currentStatus.name}</Text>
                 </Text>
-                <Text style={styles.infoText}>
-                  last watered: {relativeLabel(plant.last_watered)}
-                  {' '}({friendlyDate(plant.last_watered)})
-                </Text>
-                <Text style={styles.infoText}>
-                  next watering: {relativeLabel(nextDate)}
-                </Text>
+
+                <View style={styles.wateredRow}>
+                  <Text style={styles.infoText}>last watered:</Text>
+                  <TouchableOpacity
+                    onPress={() => adjustWateredDays(1)}
+                    disabled={wateredDaysAgo >= MAX_DAYS_AGO}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  >
+                    <Text style={[styles.arrowText, wateredDaysAgo >= MAX_DAYS_AGO && styles.arrowDisabled]}>◄</Text>
+                  </TouchableOpacity>
+                  <Text style={styles.wateredLabel}>{dateLabelStr(wateredDaysAgo)}</Text>
+                  <TouchableOpacity
+                    onPress={() => adjustWateredDays(-1)}
+                    disabled={wateredDaysAgo <= 0}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  >
+                    <Text style={[styles.arrowText, wateredDaysAgo <= 0 && styles.arrowDisabled]}>►</Text>
+                  </TouchableOpacity>
+                </View>
+
+                <Text style={styles.infoText}>next watering: {relativeLabel(nextDate)}</Text>
+                <Text style={styles.infoText}>every {plant.watering_days} day{plant.watering_days !== 1 ? 's' : ''}</Text>
               </View>
             </View>
 
-            {/* ── Delete ── */}
             <TouchableOpacity
               style={styles.deleteButton}
               onPress={confirmDelete}
-              hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             >
               <Text style={styles.deleteIcon}>🗑</Text>
             </TouchableOpacity>
@@ -228,10 +269,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   card: {
-    width: 156,
-    height: 224,
-    borderRadius: 9,
-    padding: 12,
+    width: 320,
+    borderRadius: 18,
+    padding: 20,
     elevation: 12,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 6 },
@@ -240,124 +280,145 @@ const styles = StyleSheet.create({
   },
   closeButton: {
     position: 'absolute',
-    top: 12,
-    right: 12,
+    top: 14,
+    right: 14,
     zIndex: 1,
+    backgroundColor: 'rgba(0,0,0,0.2)',
+    borderRadius: 12,
+    width: 24,
+    height: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   closeIcon: {
     color: '#FFFFFF',
-    fontSize: 10,
+    fontSize: 12,
+    fontWeight: '700',
   },
   content: {
-    flex: 1,
     alignItems: 'center',
-    paddingTop: 16,
-    gap: 7,
+    paddingTop: 12,
+    gap: 10,
   },
   imagePlaceholder: {
-    width: 66,
-    height: 74,
-    borderRadius: 9,
+    width: 90,
+    height: 90,
+    borderRadius: 16,
     backgroundColor: '#FFFFFF',
     alignItems: 'center',
     justifyContent: 'center',
-    overflow: 'hidden',
   },
   plantEmoji: {
-    fontSize: 34,
+    fontSize: 46,
   },
-  // Static name row
   nameRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 4,
+    gap: 6,
   },
   plantName: {
-    fontSize: 12,
-    fontWeight: '600',
+    fontSize: 18,
+    fontWeight: '700',
     color: '#FFFFFF',
-    maxWidth: 100,
-    fontFamily: Platform.OS === 'ios' ? 'Inter' : undefined,
+    maxWidth: 220,
+    fontFamily: FONT_FAMILY,
   },
   pencilIcon: {
-    fontSize: 7,
+    fontSize: 12,
   },
-  // Editing name row
   nameEditRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 8,
   },
   nameInput: {
-    fontSize: 12,
-    fontWeight: '600',
+    fontSize: 18,
+    fontWeight: '700',
     color: '#FFFFFF',
-    borderBottomWidth: 1.5,
+    borderBottomWidth: 2,
     borderBottomColor: 'rgba(255,255,255,0.7)',
-    minWidth: 80,
-    maxWidth: 100,
-    paddingVertical: 1,
-    paddingHorizontal: 2,
-    fontFamily: Platform.OS === 'ios' ? 'Inter' : undefined,
+    minWidth: 120,
+    maxWidth: 200,
+    paddingVertical: 2,
+    paddingHorizontal: 4,
+    fontFamily: FONT_FAMILY,
   },
   tickButton: {
     backgroundColor: 'rgba(255,255,255,0.2)',
-    borderRadius: 10,
-    width: 20,
-    height: 20,
+    borderRadius: 12,
+    width: 26,
+    height: 26,
     alignItems: 'center',
     justifyContent: 'center',
   },
   tickIcon: {
     color: '#FFFFFF',
-    fontSize: 12,
+    fontSize: 14,
     fontWeight: '700',
-    lineHeight: 14,
   },
-  // Species
   speciesRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 4,
+    gap: 6,
   },
   speciesText: {
-    fontSize: 10,
-    color: '#D3D3D3',
-    fontFamily: Platform.OS === 'ios' ? 'Inter' : undefined,
+    fontSize: 13,
+    color: '#D3EDD3',
+    fontFamily: FONT_FAMILY,
   },
   speciesDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+    width: 10,
+    height: 10,
+    borderRadius: 5,
   },
-  // Info block
   infoBlock: {
     alignItems: 'center',
+    gap: 5,
+    marginTop: 4,
+    width: '100%',
   },
   infoText: {
-    fontSize: 8,
+    fontSize: 12,
     color: '#FFFFFF',
     textAlign: 'center',
-    lineHeight: 12,
-    fontFamily: Platform.OS === 'ios' ? 'Inter' : undefined,
+    lineHeight: 18,
+    fontFamily: FONT_FAMILY,
   },
-  // Delete
+  wateredRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  arrowText: {
+    fontSize: 11,
+    color: 'rgba(255,255,255,0.85)',
+  },
+  arrowDisabled: {
+    opacity: 0.25,
+  },
+  wateredLabel: {
+    fontSize: 12,
+    color: '#FFFFFF',
+    fontFamily: FONT_FAMILY,
+    fontWeight: '600',
+    minWidth: 70,
+    textAlign: 'center',
+  },
   deleteButton: {
-    position: 'absolute',
-    bottom: 12,
-    right: 22,
-    width: 25,
-    height: 25,
-    borderRadius: 12,
+    alignSelf: 'flex-end',
+    marginTop: 16,
+    width: 34,
+    height: 34,
+    borderRadius: 17,
     backgroundColor: '#7B6B5D',
     alignItems: 'center',
     justifyContent: 'center',
   },
   deleteIcon: {
-    fontSize: 12,
-    color: '#FFFFFF',
+    fontSize: 16,
   },
 });
 

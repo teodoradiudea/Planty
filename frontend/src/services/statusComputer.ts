@@ -21,14 +21,15 @@ export const computeStatus = (lastWatered: string, wateringDays: number): Status
   today.setHours(0, 0, 0, 0);
 
   const diffMs = nextDate.getTime() - today.getTime();
-  const diffDays = Math.round(diffMs / 86_400_000);
+  // Math.floor for conservative calculation — avoids rounding a near-midnight boundary
+  const diffDays = Math.floor(diffMs / 86_400_000);
 
   if (diffDays < 0) {
     // Overdue
     return AVAILABLE_STATUSES.find(s => s.name === 'Wilting') ?? AVAILABLE_STATUSES[2];
   }
   if (diffDays <= 1) {
-    // Due today or tomorrow
+    // Due today or tomorrow — early warning
     return AVAILABLE_STATUSES.find(s => s.name === 'Needs Water') ?? AVAILABLE_STATUSES[1];
   }
   // Plenty of time
