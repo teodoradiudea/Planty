@@ -1,20 +1,15 @@
 import React from 'react';
-import { StyleSheet, TouchableOpacity, View } from 'react-native';
+import { TouchableOpacity, View } from 'react-native';
 import { POT_W, POT_CONTAINER_H } from '../decorations/FlowerPot';
 import FlowerPot from '../decorations/FlowerPot';
 import type { Plant } from '../types/Plant';
+import {AURA_COLOR, plantStyle} from "../styles/plantStyle.ts";
 
 interface PlantCardProps {
   plant: Plant;
   onPress: (plant: Plant) => void;
   isBeingWatered: boolean;
 }
-
-/** Maps status name to aura colour. Healthy has no aura. */
-const AURA_COLOR: Record<string, string | undefined> = {
-  wilting:       'rgba(214, 40, 57, 0.35)',   // red
-  'needs water': 'rgba(224, 122, 95, 0.35)',  // orange
-};
 
 const PlantCard: React.FC<PlantCardProps> = ({
   plant,
@@ -34,7 +29,7 @@ const PlantCard: React.FC<PlantCardProps> = ({
       {auraColor && (
         <View
           style={[
-            styles.aura,
+            plantStyle.aura,
             { width: POT_W, height: POT_CONTAINER_H, backgroundColor: auraColor },
           ]}
         />
@@ -46,16 +41,6 @@ const PlantCard: React.FC<PlantCardProps> = ({
     </TouchableOpacity>
   );
 };
-
-const styles = StyleSheet.create({
-  aura: {
-    position: 'absolute',
-    bottom: 0,
-    borderRadius: 18,
-    borderWidth: 2,
-    borderColor: 'rgba(255,255,255,0.15)',
-  },
-});
 
 export default PlantCard;
 

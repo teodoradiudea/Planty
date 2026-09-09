@@ -2,7 +2,6 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Alert,
   Modal,
-  StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
@@ -10,11 +9,9 @@ import {
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import { STATUS_COLOR, STATUS_COLOR_FALLBACK } from '../constants/plantOptions';
-import { FONT_FAMILY } from '../constants/theme';
 import { computeStatus } from '../services/statusComputer';
 import type { Plant } from '../types/Plant';
-
-/* ─── date helpers ──────────────────────────────────────────────────────── */
+import {cardStyle} from "../styles/cardStyle.ts";
 
 const parseDate = (str: string): Date => {
   const [y, m, day] = str.split('-').map(Number);
@@ -158,7 +155,7 @@ const PlantInfoCard: React.FC<PlantInfoCardProps> = ({
       onRequestClose={onClose}
     >
       <TouchableOpacity
-        style={styles.backdrop}
+        style={cardStyle.backdrop}
         activeOpacity={1}
         onPress={onClose}
       >
@@ -167,26 +164,26 @@ const PlantInfoCard: React.FC<PlantInfoCardProps> = ({
             colors={['#68A74D', '#28401E']}
             start={{ x: 0.5, y: 0 }}
             end={{ x: 0.5, y: 1 }}
-            style={styles.card}
+            style={cardStyle.card}
           >
             <TouchableOpacity
-              style={styles.closeButton}
+              style={cardStyle.closeButton}
               onPress={onClose}
               hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
             >
-              <Text style={styles.closeIcon}>✕</Text>
+              <Text style={cardStyle.closeIcon}>✕</Text>
             </TouchableOpacity>
 
-            <View style={styles.content}>
-              <View style={styles.imagePlaceholder}>
-                <Text style={styles.plantEmoji}>{plant.specie.emoji}</Text>
+            <View style={cardStyle.content}>
+              <View style={cardStyle.imagePlaceholder}>
+                <Text style={cardStyle.plantEmoji}>{plant.specie.emoji}</Text>
               </View>
 
               {isEditing ? (
-                <View style={styles.nameEditRow}>
+                <View style={cardStyle.nameEditRow}>
                   <TextInput
                     ref={inputRef}
-                    style={styles.nameInput}
+                    style={cardStyle.nameInput}
                     value={nameValue}
                     onChangeText={setNameValue}
                     onSubmitEditing={commitName}
@@ -197,60 +194,60 @@ const PlantInfoCard: React.FC<PlantInfoCardProps> = ({
                   <TouchableOpacity
                     onPress={commitName}
                     hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                    style={styles.tickButton}
+                    style={cardStyle.tickButton}
                   >
-                    <Text style={styles.tickIcon}>✓</Text>
+                    <Text style={cardStyle.tickIcon}>✓</Text>
                   </TouchableOpacity>
                 </View>
               ) : (
-                <TouchableOpacity style={styles.nameRow} onPress={startEditing}>
-                  <Text style={styles.plantName} numberOfLines={1}>
+                <TouchableOpacity style={cardStyle.nameRow} onPress={startEditing}>
+                  <Text style={cardStyle.plantName} numberOfLines={1}>
                     {plant.name}
                   </Text>
-                  <Text style={styles.pencilIcon}>✏️</Text>
+                  <Text style={cardStyle.pencilIcon}>✏️</Text>
                 </TouchableOpacity>
               )}
 
-              <View style={styles.speciesRow}>
-                <Text style={styles.speciesText}>{plant.specie.name}</Text>
-                <View style={[styles.speciesDot, { backgroundColor: statusColor }]} />
+              <View style={cardStyle.speciesRow}>
+                <Text style={cardStyle.speciesText}>{plant.specie.name}</Text>
+                <View style={[cardStyle.speciesDot, { backgroundColor: statusColor }]} />
               </View>
 
-              <View style={styles.infoBlock}>
-                <Text style={styles.infoText}>
-                  status: <Text style={[styles.infoText, { color: statusColor, fontWeight: '700' }]}>{currentStatus.name}</Text>
+              <View style={cardStyle.infoBlock}>
+                <Text style={cardStyle.infoText}>
+                  status: <Text style={[cardStyle.infoText, { color: statusColor, fontWeight: '700' }]}>{currentStatus.name}</Text>
                 </Text>
 
-                <View style={styles.wateredRow}>
-                  <Text style={styles.infoText}>last watered:</Text>
+                <View style={cardStyle.wateredRow}>
+                  <Text style={cardStyle.infoText}>last watered:</Text>
                   <TouchableOpacity
                     onPress={() => adjustWateredDays(1)}
                     disabled={wateredDaysAgo >= MAX_DAYS_AGO}
                     hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                   >
-                    <Text style={[styles.arrowText, wateredDaysAgo >= MAX_DAYS_AGO && styles.arrowDisabled]}>◄</Text>
+                    <Text style={[cardStyle.arrowText, wateredDaysAgo >= MAX_DAYS_AGO && cardStyle.arrowDisabled]}>◄</Text>
                   </TouchableOpacity>
-                  <Text style={styles.wateredLabel}>{dateLabelStr(wateredDaysAgo)}</Text>
+                  <Text style={cardStyle.wateredLabel}>{dateLabelStr(wateredDaysAgo)}</Text>
                   <TouchableOpacity
                     onPress={() => adjustWateredDays(-1)}
                     disabled={wateredDaysAgo <= 0}
                     hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                   >
-                    <Text style={[styles.arrowText, wateredDaysAgo <= 0 && styles.arrowDisabled]}>►</Text>
+                    <Text style={[cardStyle.arrowText, wateredDaysAgo <= 0 && cardStyle.arrowDisabled]}>►</Text>
                   </TouchableOpacity>
                 </View>
 
-                <Text style={styles.infoText}>next watering: {relativeLabel(nextDate)}</Text>
-                <Text style={styles.infoText}>every {plant.watering_days} day{plant.watering_days !== 1 ? 's' : ''}</Text>
+                <Text style={cardStyle.infoText}>next watering: {relativeLabel(nextDate)}</Text>
+                <Text style={cardStyle.infoText}>every {plant.watering_days} day{plant.watering_days !== 1 ? 's' : ''}</Text>
               </View>
             </View>
 
             <TouchableOpacity
-              style={styles.deleteButton}
+              style={cardStyle.deleteButton}
               onPress={confirmDelete}
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             >
-              <Text style={styles.deleteIcon}>🗑</Text>
+              <Text style={cardStyle.deleteIcon}>🗑</Text>
             </TouchableOpacity>
           </LinearGradient>
         </TouchableOpacity>
@@ -258,168 +255,5 @@ const PlantInfoCard: React.FC<PlantInfoCardProps> = ({
     </Modal>
   );
 };
-
-/* ─── styles ─────────────────────────────────────────────────────────────── */
-
-const styles = StyleSheet.create({
-  backdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(10, 30, 10, 0.55)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  card: {
-    width: 320,
-    borderRadius: 18,
-    padding: 20,
-    elevation: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.35,
-    shadowRadius: 14,
-  },
-  closeButton: {
-    position: 'absolute',
-    top: 14,
-    right: 14,
-    zIndex: 1,
-    backgroundColor: 'rgba(0,0,0,0.2)',
-    borderRadius: 12,
-    width: 24,
-    height: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  closeIcon: {
-    color: '#FFFFFF',
-    fontSize: 12,
-    fontWeight: '700',
-  },
-  content: {
-    alignItems: 'center',
-    paddingTop: 12,
-    gap: 10,
-  },
-  imagePlaceholder: {
-    width: 90,
-    height: 90,
-    borderRadius: 16,
-    backgroundColor: '#FFFFFF',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  plantEmoji: {
-    fontSize: 46,
-  },
-  nameRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-  },
-  plantName: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#FFFFFF',
-    maxWidth: 220,
-    fontFamily: FONT_FAMILY,
-  },
-  pencilIcon: {
-    fontSize: 12,
-  },
-  nameEditRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  nameInput: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#FFFFFF',
-    borderBottomWidth: 2,
-    borderBottomColor: 'rgba(255,255,255,0.7)',
-    minWidth: 120,
-    maxWidth: 200,
-    paddingVertical: 2,
-    paddingHorizontal: 4,
-    fontFamily: FONT_FAMILY,
-  },
-  tickButton: {
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    borderRadius: 12,
-    width: 26,
-    height: 26,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  tickIcon: {
-    color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: '700',
-  },
-  speciesRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-  },
-  speciesText: {
-    fontSize: 13,
-    color: '#D3EDD3',
-    fontFamily: FONT_FAMILY,
-  },
-  speciesDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-  },
-  infoBlock: {
-    alignItems: 'center',
-    gap: 5,
-    marginTop: 4,
-    width: '100%',
-  },
-  infoText: {
-    fontSize: 12,
-    color: '#FFFFFF',
-    textAlign: 'center',
-    lineHeight: 18,
-    fontFamily: FONT_FAMILY,
-  },
-  wateredRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-  },
-  arrowText: {
-    fontSize: 11,
-    color: 'rgba(255,255,255,0.85)',
-  },
-  arrowDisabled: {
-    opacity: 0.25,
-  },
-  wateredLabel: {
-    fontSize: 12,
-    color: '#FFFFFF',
-    fontFamily: FONT_FAMILY,
-    fontWeight: '600',
-    minWidth: 70,
-    textAlign: 'center',
-  },
-  deleteButton: {
-    alignSelf: 'flex-end',
-    marginTop: 16,
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    backgroundColor: '#7B6B5D',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  deleteIcon: {
-    fontSize: 16,
-  },
-});
 
 export default PlantInfoCard;

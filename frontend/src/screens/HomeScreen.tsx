@@ -37,7 +37,7 @@ import {
   cancelPlantNotification,
 } from '../services/notifications';
 import type { Plant, PlantFormData } from '../types/Plant';
-import { todayStr, formatTime } from '../utils/formatting';
+import { todayStr, formatTime } from '../constants/formatting.ts';
 
 /* ─── layout constants ─── */
 
@@ -467,7 +467,6 @@ const HomeScreen: React.FC = () => {
           <Flower width={57} height={37} />
           <Flower width={44} height={29} />
           <Flower width={57} height={37} />
-          <Flower width={50} height={33} />
         </View>
 
         {/* Buttons row: Add | Sprinkler (draggable) | Clock — in front of fence */}
@@ -637,21 +636,24 @@ const styles = StyleSheet.create({
   /* footer */
   footer: {
     height: FOOTER_HEIGHT,
-    overflow: 'visible',   // let fence bleed upward
+    overflow: 'visible',
     alignItems: 'center',
     justifyContent: 'flex-end',
     paddingBottom: 0,
   },
+
   fenceWrapper: {
     position: 'absolute',
-    top: -36,             // bleed 36px upward into the plants area
+    top: -36,
     left: 0,
     right: 0,
     zIndex: 1,
   },
+
+  //bottom of the fence flowers
   flowersRow: {
     position: 'absolute',
-    top: 50,              // bottom of fence pickets, above rails
+    top: 50,
     left: 0,
     right: 0,
     flexDirection: 'row',
@@ -659,6 +661,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     zIndex: 2,
   },
+
   footerButtons: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -668,6 +671,7 @@ const styles = StyleSheet.create({
     elevation: 10,
     marginBottom: 12,
   },
+
   footerBtn: {
     alignItems: 'center',
     justifyContent: 'center',
@@ -677,10 +681,10 @@ const styles = StyleSheet.create({
     borderRadius: 34,
     elevation: 6,
     zIndex: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
+    // shadowColor: '#000',
+    // shadowOffset: { width: 0, height: 3 },
+    // shadowOpacity: 0.15,
+    // shadowRadius: 8,
   },
   footerBtnDisabled: {
     opacity: 0.5,
@@ -694,7 +698,20 @@ const styles = StyleSheet.create({
     color: '#2D6A4F',
     marginTop: 2,
   },
+
   sprinklerInFooter: {
+    zIndex: 10,
+    elevation: 10,
+    // backgroundColor: '#FFFFFF',
+    // borderRadius: 40,
+    padding: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+  },
+
+  sprinklerInFooterActive: {
     zIndex: 10,
     elevation: 10,
     // backgroundColor: '#FFFFFF',
@@ -714,7 +731,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 999,
-    elevation: 20,
+    elevation: 60,
   },
 
   /* individual water drop */

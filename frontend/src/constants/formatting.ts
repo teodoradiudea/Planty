@@ -1,5 +1,3 @@
-/** Shared formatting utilities */
-
 /** Formats a 0-23 hour to a 12-hour AM/PM string. E.g. 17 -> "5:00 PM" */
 export const formatHour = (h: number): string => {
   const period = h >= 12 ? 'PM' : 'AM';
