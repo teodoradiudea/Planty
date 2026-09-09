@@ -166,16 +166,14 @@ const PlantInfoCard: React.FC<PlantInfoCardProps> = ({
             end={{ x: 0.5, y: 1 }}
             style={cardStyle.card}
           >
-            <TouchableOpacity
-              style={cardStyle.closeButton}
-              onPress={onClose}
-              hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-            >
-              <Text style={cardStyle.closeIcon}>✕</Text>
-            </TouchableOpacity>
+            <View style={cardStyle.header}>
+              <TouchableOpacity onPress={onClose} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} style={cardStyle.closeButton}>
+                <Text style={cardStyle.closeIcon}>x</Text>
+              </TouchableOpacity>
+            </View>
 
             <View style={cardStyle.content}>
-              <View style={cardStyle.imagePlaceholder}>
+              <View style={cardStyle.plantImageBox}>
                 <Text style={cardStyle.plantEmoji}>{plant.specie.emoji}</Text>
               </View>
 
@@ -191,16 +189,9 @@ const PlantInfoCard: React.FC<PlantInfoCardProps> = ({
                     selectTextOnFocus
                     maxLength={30}
                   />
-                  <TouchableOpacity
-                    onPress={commitName}
-                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                    style={cardStyle.tickButton}
-                  >
-                    <Text style={cardStyle.tickIcon}>✓</Text>
-                  </TouchableOpacity>
                 </View>
               ) : (
-                <TouchableOpacity style={cardStyle.nameRow} onPress={startEditing}>
+                <TouchableOpacity style={cardStyle.editButton} onPress={startEditing}>
                   <Text style={cardStyle.plantName} numberOfLines={1}>
                     {plant.name}
                   </Text>
@@ -210,7 +201,6 @@ const PlantInfoCard: React.FC<PlantInfoCardProps> = ({
 
               <View style={cardStyle.speciesRow}>
                 <Text style={cardStyle.speciesText}>{plant.specie.name}</Text>
-                <View style={[cardStyle.speciesDot, { backgroundColor: statusColor }]} />
               </View>
 
               <View style={cardStyle.infoBlock}>
@@ -238,7 +228,6 @@ const PlantInfoCard: React.FC<PlantInfoCardProps> = ({
                 </View>
 
                 <Text style={cardStyle.infoText}>next watering: {relativeLabel(nextDate)}</Text>
-                <Text style={cardStyle.infoText}>every {plant.watering_days} day{plant.watering_days !== 1 ? 's' : ''}</Text>
               </View>
             </View>
 

@@ -9,7 +9,7 @@ import {
   View,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
-import Icon from 'react-native-vector-icons/Ionicons';
+
 import { AVAILABLE_SPECIES } from '../constants/plantOptions';
 import { localDateStr } from '../constants/formatting.ts';
 import { computeStatus } from '../services/statusComputer';
@@ -87,8 +87,8 @@ const AddPlantCard: React.FC<AddPlantCardProps> = ({ visible, onSave, onClose })
           >
             {/* ── Header ── */}
             <View style={cardStyle.header}>
-              <TouchableOpacity onPress={onClose} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} style={cardStyle.closeIconBtn}>
-                <Icon name="close" size={16} color="#fff" />
+              <TouchableOpacity onPress={onClose} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} style={cardStyle.closeButton}>
+                <Text style={cardStyle.closeIcon}>x</Text>
               </TouchableOpacity>
             </View>
 
@@ -120,7 +120,7 @@ const AddPlantCard: React.FC<AddPlantCardProps> = ({ visible, onSave, onClose })
                       <Text style={cardStyle.plantName}>
                         {form.name || 'Plant Name'}
                       </Text>
-                      <Icon name="pencil" size={10} color="#68A64D" />
+                      <Text style={cardStyle.pencilIcon}>✏️</Text>
                     </TouchableOpacity>
                   )}
                 </View>
@@ -250,7 +250,7 @@ const SpeciePicker: React.FC<SpeciePickerProps> = ({
                   </Text>
                   <Text style={cardStyle.pickerSub}>every {specie.wateringDays} days</Text>
                 </View>
-                {active && <Icon name="checkmark" size={16} color="#68A64D" />}
+
               </TouchableOpacity>
             );
           })}
