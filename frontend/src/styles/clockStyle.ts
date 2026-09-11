@@ -1,14 +1,11 @@
 import { StyleSheet } from 'react-native';
 import { FONT_FAMILY } from '../constants/theme.ts';
 
-// ── drum-roll geometry ───────────────────────────────────────────────────────
-// VISIBLE must be odd so the selected item is always the centre row.
-export const ITEM_H   = 56;   // height of each row in the drum
-export const VISIBLE  = 5;    // rows shown (odd)
-export const HALF     = Math.floor(VISIBLE / 2);   // rows above/below centre = 2
-export const DRUM_H   = ITEM_H * VISIBLE;          // total visible height = 280
-// Padding lets the first and last real items scroll to the centre slot.
-export const PAD      = ITEM_H * HALF;             // = 112
+export const ITEM_H = 56;
+export const VISIBLE = 3;
+export const HALF = Math.floor(VISIBLE / 2);
+export const DRUM_H = ITEM_H * VISIBLE;
+export const PAD = ITEM_H * HALF;
 
 export const clockStyle = StyleSheet.create({
 

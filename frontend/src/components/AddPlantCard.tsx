@@ -15,6 +15,7 @@ import { localDateStr } from '../constants/formatting.ts';
 import { computeStatus } from '../services/statusComputer';
 import type { PlantFormData } from '../types/Plant';
 import {cardStyle} from "../styles/cardStyle.ts";
+import {Icon} from "../decorations/Icons.tsx";
 
 interface AddPlantCardProps {
   visible: boolean;
@@ -79,27 +80,26 @@ const AddPlantCard: React.FC<AddPlantCardProps> = ({ visible, onSave, onClose })
         activeOpacity={1}
         onPress={onClose}
       >
-        {/* Stop propagation so tapping the card itself doesn't close */}
         <TouchableOpacity activeOpacity={1} onPress={() => {}}>
           <LinearGradient
             colors={['#68A64D', '#F4A261']}
             style={cardStyle.card}
           >
-            {/* ── Header ── */}
+            {/* header */}
             <View style={cardStyle.header}>
               <TouchableOpacity onPress={onClose} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} style={cardStyle.closeButton}>
-                <Text style={cardStyle.closeIcon}>x</Text>
+                <Icon name="exit"></Icon>
               </TouchableOpacity>
             </View>
 
-            {/* ── Plant Image + Name ── */}
+            {/* plant image + name */}
             <View style={cardStyle.content}>
               <View style={cardStyle.imageContainer}>
                 <View style={cardStyle.plantImageBox}>
                   <Text style={cardStyle.plantEmoji}>{form.specie.emoji}</Text>
                 </View>
 
-                {/* Plant Name – tap pencil to edit */}
+                {/* plant name + edit button */}
                 <View style={cardStyle.nameRow}>
                   {isEditingName ? (
                     <TextInput
@@ -120,13 +120,13 @@ const AddPlantCard: React.FC<AddPlantCardProps> = ({ visible, onSave, onClose })
                       <Text style={cardStyle.plantName}>
                         {form.name || 'Plant Name'}
                       </Text>
-                      <Text style={cardStyle.pencilIcon}>✏️</Text>
+                      <Icon name="edit" size={12}></Icon>
                     </TouchableOpacity>
                   )}
                 </View>
               </View>
 
-              {/* ── Specie ── */}
+              {/* specie */}
               <View style={cardStyle.specieRow}>
                 <Text style={cardStyle.label}>Specie:</Text>
                 <TouchableOpacity
@@ -139,12 +139,10 @@ const AddPlantCard: React.FC<AddPlantCardProps> = ({ visible, onSave, onClose })
                 </TouchableOpacity>
               </View>
 
-              {/* Watering days auto-derived — shown read-only */}
-              <Text style={cardStyle.wateringHint}>
+              <Text style={cardStyle.wateringInfo}>
                 Water every {form.watering_days} days
               </Text>
 
-              {/* ── Last Watered ── */}
               <View style={cardStyle.wateredRow}>
                 <Text style={cardStyle.smallLabel}>Watered:</Text>
                 <TouchableOpacity
@@ -189,7 +187,7 @@ const AddPlantCard: React.FC<AddPlantCardProps> = ({ visible, onSave, onClose })
               </View>
             </View>
 
-            {/* ── Save Button ── */}
+            {/* save button */}
             <TouchableOpacity style={cardStyle.saveButton} onPress={handleSave}>
               <Text style={cardStyle.saveText}>Save</Text>
             </TouchableOpacity>
@@ -197,7 +195,7 @@ const AddPlantCard: React.FC<AddPlantCardProps> = ({ visible, onSave, onClose })
         </TouchableOpacity>
       </TouchableOpacity>
 
-      {/* ── Specie Picker Sub-modal ── */}
+      {/* specie popup */}
       <SpeciePicker
         visible={showSpeciePicker}
         selected={form.specie}
@@ -216,7 +214,7 @@ const AddPlantCard: React.FC<AddPlantCardProps> = ({ visible, onSave, onClose })
   );
 };
 
-/* ─── Specie Picker ─────────────────────────────────────────────────────── */
+/* species popup */
 interface SpeciePickerProps {
   visible: boolean;
   selected: PlantFormData['specie'];

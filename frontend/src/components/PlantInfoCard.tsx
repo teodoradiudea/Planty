@@ -12,6 +12,7 @@ import { STATUS_COLOR, STATUS_COLOR_FALLBACK } from '../constants/plantOptions';
 import { computeStatus } from '../services/statusComputer';
 import type { Plant } from '../types/Plant';
 import {cardStyle} from "../styles/cardStyle.ts";
+import {Icon} from "../decorations/Icons.tsx";
 
 const parseDate = (str: string): Date => {
   const [y, m, day] = str.split('-').map(Number);
@@ -166,9 +167,11 @@ const PlantInfoCard: React.FC<PlantInfoCardProps> = ({
             end={{ x: 0.5, y: 1 }}
             style={cardStyle.card}
           >
+
+            {/* header */}
             <View style={cardStyle.header}>
               <TouchableOpacity onPress={onClose} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} style={cardStyle.closeButton}>
-                <Text style={cardStyle.closeIcon}>x</Text>
+                <Icon name="exit"></Icon>
               </TouchableOpacity>
             </View>
 
@@ -189,27 +192,34 @@ const PlantInfoCard: React.FC<PlantInfoCardProps> = ({
                     selectTextOnFocus
                     maxLength={30}
                   />
+                  <TouchableOpacity
+                      style={cardStyle.tickButton}
+                      onPress={commitName}
+                      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  >
+                    <Icon name="save" size={14} />
+                  </TouchableOpacity>
                 </View>
               ) : (
                 <TouchableOpacity style={cardStyle.editButton} onPress={startEditing}>
                   <Text style={cardStyle.plantName} numberOfLines={1}>
                     {plant.name}
                   </Text>
-                  <Text style={cardStyle.pencilIcon}>✏️</Text>
+                  <Icon name="edit" size={12}></Icon>
                 </TouchableOpacity>
               )}
 
-              <View style={cardStyle.speciesRow}>
+              <View style={cardStyle.specieRow}>
                 <Text style={cardStyle.speciesText}>{plant.specie.name}</Text>
               </View>
 
-              <View style={cardStyle.infoBlock}>
-                <Text style={cardStyle.infoText}>
-                  status: <Text style={[cardStyle.infoText, { color: statusColor, fontWeight: '700' }]}>{currentStatus.name}</Text>
+              <View style={cardStyle.plantInfoBlock}>
+                <Text style={cardStyle.plantInfoText}>
+                  status: <Text style={[cardStyle.plantInfoText, { color: statusColor, fontWeight: '700' }]}>{currentStatus.name}</Text>
                 </Text>
 
                 <View style={cardStyle.wateredRow}>
-                  <Text style={cardStyle.infoText}>last watered:</Text>
+                  <Text style={cardStyle.plantInfoText}>last watered:</Text>
                   <TouchableOpacity
                     onPress={() => adjustWateredDays(1)}
                     disabled={wateredDaysAgo >= MAX_DAYS_AGO}
@@ -227,7 +237,7 @@ const PlantInfoCard: React.FC<PlantInfoCardProps> = ({
                   </TouchableOpacity>
                 </View>
 
-                <Text style={cardStyle.infoText}>next watering: {relativeLabel(nextDate)}</Text>
+                <Text style={cardStyle.plantInfoText}>next watering: {relativeLabel(nextDate)}</Text>
               </View>
             </View>
 
@@ -236,7 +246,7 @@ const PlantInfoCard: React.FC<PlantInfoCardProps> = ({
               onPress={confirmDelete}
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             >
-              <Text style={cardStyle.deleteIcon}>🗑</Text>
+              <Icon name="delete"></Icon>
             </TouchableOpacity>
           </LinearGradient>
         </TouchableOpacity>

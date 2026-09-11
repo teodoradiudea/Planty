@@ -2,13 +2,38 @@ import { StyleSheet } from "react-native";
 import { screenHeight, screenWidth } from "../constants/sizes.ts";
 import { FONT_FAMILY } from "../constants/theme.ts";
 
+export const cardWidth = 0.8*screenWidth;
+export const cardHeight = 0.6*screenHeight;
+export const cardBorderRadius = 30;
+export const plantWidth = 0.4*cardWidth;
+export const plantHeight = 0.3*cardHeight;
+export const arrowSize = 16;
+export const nameText = 22;
+export const specieText = 14;
+export const infoText = 16;
+export const textColor = 'white';
+export const specieColor = 'lightgreen';
+export const iconColor = 'white';
+
 export const cardStyle = StyleSheet.create({
+    card: {
+        width: cardWidth,
+        height: cardHeight,
+        borderRadius: cardBorderRadius,
+        padding: 20,
+        elevation: 12,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 6 },
+        shadowOpacity: 0.3,
+        shadowRadius: 12,
+    },
     backdrop: {
         flex: 1,
         backgroundColor: 'rgba(10, 30, 10, 0.55)',
         alignItems: 'center',
         justifyContent: 'center',
     },
+
     header: {
         flexDirection: 'row',
         justifyContent: 'flex-end',
@@ -22,65 +47,34 @@ export const cardStyle = StyleSheet.create({
         justifyContent: 'center',
     },
     closeIcon: {
-        color: '#ffffff',
-        fontSize: 15,
+        color: iconColor,
+        fontSize: 20,
         fontWeight: '900',
     },
-    plantEmoji: {
-        fontSize: 46,
-    },
-    arrowText: {
-        fontSize: 11,
-        color: 'rgba(255,255,255,0.85)',
-    },
-    arrowDisabled: {
-        opacity: 0.25,
-    },
-    wateredRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 8,
-    },
-    dateLabel: {
-        fontSize: 11,
-        color: '#fff',
-        textAlign: 'center',
-        minWidth: 70,
-        fontFamily: FONT_FAMILY,
-    },
 
-    // ─── ADD PLANT CARD ─────────────────────────────────────────────────
 
-    card: {
-        width: 0.7 * screenWidth,
-        height: 0.5 * screenHeight,
-        // borderColor: 'rgba(255,255,255,0.5)',
-        // borderWidth: 3,
-        borderRadius: 20,
-        paddingHorizontal: 20,
-        paddingTop: 14,
-        paddingBottom: 20,
-        elevation: 12,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 6 },
-        shadowOpacity: 0.3,
-        shadowRadius: 12,
-    },
     content: {
         alignItems: 'center',
         gap: 12,
     },
+
+    //plant image
     imageContainer: {
         alignItems: 'center',
     },
     plantImageBox: {
-        width: 100,
-        height: 120,
+        width: plantWidth,
+        height: plantHeight,
         borderRadius: 16,
         backgroundColor: '#fff',
         justifyContent: 'center',
         alignItems: 'center',
     },
+    plantEmoji: {
+        fontSize: 46,
+    },
+
+    //plant name
     nameRow: {
         marginTop: 8,
     },
@@ -90,28 +84,157 @@ export const cardStyle = StyleSheet.create({
         gap: 6,
     },
     plantName: {
-        fontSize: 16,
-        color: '#fff',
+        fontSize: nameText,
+        color: textColor,
         fontFamily: FONT_FAMILY,
         fontWeight: '600',
     },
     nameInput: {
-        fontSize: 16,
-        color: '#fff',
+        fontSize: nameText,
+        color: textColor,
         borderBottomWidth: 1.5,
         borderBottomColor: 'rgba(255,255,255,0.6)',
         minWidth: 120,
         paddingVertical: 2,
         fontFamily: FONT_FAMILY,
     },
+
+    //plant specie
     specieRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 6,
+        marginTop: -10,
+    },
+    speciesText: {
+        fontSize: specieText,
+        color: specieColor,
+        fontFamily: FONT_FAMILY,
+    },
+
+    //plant info
+    plantInfoBlock: {
+        alignItems: 'center',
+        gap: 5,
+        marginTop: 4,
+        width: '100%',
+    },
+    plantInfoText: {
+        fontSize: infoText,
+        color: textColor,
+        textAlign: 'center',
+        lineHeight: 18,
+        fontFamily: FONT_FAMILY,
+    },
+
+    //last watered
+    wateringInfo: {
+        fontSize: infoText,
+        color: textColor,
+        fontFamily: FONT_FAMILY,
+    },
+    wateredRow: {
         flexDirection: 'row',
         alignItems: 'center',
         gap: 8,
     },
+    wateredLabel: {
+        fontSize: infoText,
+        color: textColor,
+        fontFamily: FONT_FAMILY,
+        fontWeight: '600',
+        minWidth: 70,
+        textAlign: 'center',
+    },
+    arrowText: {
+        fontSize: arrowSize,
+        color: iconColor,
+    },
+    arrowDisabled: {
+        opacity: 0.25,
+    },
+    dateLabel: {
+        fontSize: infoText,
+        color: textColor,
+        textAlign: 'center',
+        minWidth: 70,
+        fontFamily: FONT_FAMILY,
+    },
+
+    //edit
+    editIcon: {
+        width: 10,
+        height: 10,
+        backgroundColor: 'rgba(255,255,255,0.2)',
+        borderRadius: 12,
+    },
+    editButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 6,
+    },
+    nameEditRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 8,
+    },
+
+    //save edit
+    tickIcon: {
+        color: iconColor,
+        fontSize: 14,
+        fontWeight: '700',
+    },
+    tickButton: {
+        backgroundColor: 'rgba(255,255,255,0.2)',
+        borderRadius: 12,
+        width: 26,
+        height: 26,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+
+    //save
+    saveButton: {
+        backgroundColor: '#68A64D',
+        borderRadius: 8,
+        borderWidth: 1,
+        borderColor: '#ABCB9F',
+        alignSelf: 'center',
+        paddingHorizontal: 32,
+        paddingVertical: 8,
+        marginTop: 40,
+    },
+    saveText: {
+        fontSize: infoText,
+        color: textColor,
+        fontWeight: '700',
+        fontFamily: FONT_FAMILY,
+    },
+
+    //delete
+    deleteButton: {
+        alignSelf: 'center',
+        marginTop: 40,
+        width: 50,
+        height: 50,
+        borderRadius: 30,
+        backgroundColor: '#7B6B5D',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    deleteIcon: {
+        fontSize: nameText,
+    },
+
+
+
     label: {
-        fontSize: 16,
-        color: '#fff',
+        fontSize: infoText,
+        color: textColor,
         fontFamily: FONT_FAMILY,
     },
     selectBadge: {
@@ -123,39 +246,18 @@ export const cardStyle = StyleSheet.create({
         paddingVertical: 4,
     },
     selectText: {
-        fontSize: 16,
-        color: '#fff',
-        fontFamily: FONT_FAMILY,
-    },
-    wateringHint: {
-        fontSize: 14,
-        color: 'rgba(255,255,255,0.8)',
+        fontSize: infoText,
+        color: textColor,
         fontFamily: FONT_FAMILY,
     },
     smallLabel: {
-        fontSize: 14,
-        color: '#fff',
-        fontFamily: FONT_FAMILY,
-    },
-    saveButton: {
-        backgroundColor: '#68A64D',
-        borderRadius: 8,
-        borderWidth: 1,
-        borderColor: '#ABCB9F',
-        alignSelf: 'center',
-        paddingHorizontal: 32,
-        paddingVertical: 8,
-        marginTop: 16,
-    },
-    saveText: {
-        fontSize: 13,
-        color: '#fff',
-        fontWeight: '700',
+        fontSize: infoText,
+        color: textColor,
         fontFamily: FONT_FAMILY,
     },
 
-    // ─── SPECIE PICKER ──────────────────────────────────────────────────
 
+    // specie piker popup
     pickerBackdrop: {
         flex: 1,
         backgroundColor: 'rgba(10, 30, 10, 0.4)',
@@ -163,8 +265,8 @@ export const cardStyle = StyleSheet.create({
         justifyContent: 'center',
     },
     pickerSheet: {
-        width: 0.7 * screenWidth,
-        maxHeight: 0.5 * screenHeight,
+        width: cardWidth,
+        maxHeight: 0.5 * cardHeight,
         backgroundColor: '#fff',
         borderRadius: 16,
         paddingVertical: 12,
@@ -176,7 +278,7 @@ export const cardStyle = StyleSheet.create({
         shadowRadius: 16,
     },
     pickerTitle: {
-        fontSize: 16,
+        fontSize: nameText,
         fontWeight: '700',
         // color: '#1C3D1C',
         textAlign: 'center',
@@ -202,7 +304,7 @@ export const cardStyle = StyleSheet.create({
         flex: 1,
     },
     pickerLabel: {
-        fontSize: 16,
+        fontSize: specieText,
         // color: '#2D6A4F',
         fontWeight: '600',
     },
@@ -210,82 +312,9 @@ export const cardStyle = StyleSheet.create({
         // color: '#68A64D',
     },
     pickerSub: {
-        fontSize: 14,
+        fontSize: infoText,
         // color: '#9E9E9E',
         marginTop: 1,
     },
 
-    // ─── PLANT INFO CARD ────────────────────────────────────────────────
-    pencilIcon: {
-        fontSize: 12,
-    },
-    editButton: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: 6,
-    },
-    nameEditRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 8,
-    },
-    tickButton: {
-        backgroundColor: 'rgba(255,255,255,0.2)',
-        borderRadius: 12,
-        width: 26,
-        height: 26,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    tickIcon: {
-        color: '#FFFFFF',
-        fontSize: 14,
-        fontWeight: '700',
-    },
-    speciesRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: 6,
-    },
-    speciesText: {
-        fontSize: 13,
-        color: '#D3EDD3',
-        fontFamily: FONT_FAMILY,
-    },
-    infoBlock: {
-        alignItems: 'center',
-        gap: 5,
-        marginTop: 4,
-        width: '100%',
-    },
-    infoText: {
-        fontSize: 12,
-        color: '#FFFFFF',
-        textAlign: 'center',
-        lineHeight: 18,
-        fontFamily: FONT_FAMILY,
-    },
-    wateredLabel: {
-        fontSize: 12,
-        color: '#FFFFFF',
-        fontFamily: FONT_FAMILY,
-        fontWeight: '600',
-        minWidth: 70,
-        textAlign: 'center',
-    },
-    deleteButton: {
-        alignSelf: 'center',
-        marginTop: 16,
-        width: 34,
-        height: 34,
-        borderRadius: 17,
-        backgroundColor: '#7B6B5D',
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    deleteIcon: {
-        fontSize: 16,
-    },
 });

@@ -2,7 +2,6 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   Alert,
   Animated,
-  Dimensions,
   PanResponder,
   ScrollView,
   StyleSheet,
@@ -38,22 +37,15 @@ import {
 } from '../services/notifications';
 import type { Plant, PlantFormData } from '../types/Plant';
 import { todayStr, formatTime } from '../constants/formatting.ts';
+import {H_PADDING, homescreenStyle, SPRINKLER_SIZE} from "../styles/homescreenStyle.ts";
+import {screenWidth} from "../constants/sizes.ts";
+import Leaves from "../decorations/Leaves.tsx";
 
-/* ─── layout constants ─── */
-
+const NUM_DROPS = 8;
 const MAX_PLANTS = 9;
 const COLS = 3;
 const SHELVES = 3;
-const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
-const H_PADDING = 20;
-// const GAP = 12;
-const SHELF_WIDTH = SCREEN_WIDTH - H_PADDING * 2;
-// const CARD_SIZE = SCREEN_WIDTH/4;
-const FOOTER_HEIGHT = SCREEN_HEIGHT * 0.25;
-const SPRINKLER_SIZE = 64;
-const NUM_DROPS = 8;
-
-/* ─── component ─── */
+const SHELF_WIDTH = screenWidth - H_PADDING * 2;
 
 const HomeScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
@@ -374,30 +366,30 @@ const HomeScreen: React.FC = () => {
 
   /* ── render ── */
   return (
-    <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
+    <SafeAreaView style={homescreenStyle.safe} edges={['top', 'left', 'right']}>
       {/* Header */}
-      <View style={styles.header}>
+      <View style={homescreenStyle.header}>
         <View>
-          <Text style={styles.appName}>🌱 Planty</Text>
-          <Text style={styles.subtitle}>Your plant collection</Text>
+          <Text style={homescreenStyle.appName}>🌱 Planty</Text>
+          <Text style={homescreenStyle.subtitle}>Your plant collection</Text>
         </View>
-        <View style={styles.badge}>
-          <Text style={styles.badgeText}>
+        <View style={homescreenStyle.badge}>
+          <Text style={homescreenStyle.badgeText}>
             {plants.length}/{MAX_PLANTS}
           </Text>
         </View>
       </View>
 
       {/* Plants area */}
-      <View style={styles.plantsArea}>
+      <View style={homescreenStyle.plantsArea}>
         <ScrollView
-          contentContainerStyle={styles.scroll}
+          contentContainerStyle={homescreenStyle.scroll}
           showsVerticalScrollIndicator={false}
           scrollEnabled={!isDragging}
         >
           {rows.map((row, shelfIdx) => (
-            <View key={shelfIdx} style={styles.shelfSection}>
-              <View style={[styles.row, { width: SHELF_WIDTH * 0.65 }]}>
+            <View key={shelfIdx} style={homescreenStyle.shelfSection}>
+              <View style={[homescreenStyle.row, { width: SHELF_WIDTH * 0.65 }]}>
                 {row.map((plant, colIdx) => {
                   const idx = shelfIdx * COLS + colIdx;
                   const isBeingWatered = wateringIdx === idx;
@@ -405,7 +397,7 @@ const HomeScreen: React.FC = () => {
                   return (
                     <View
                       key={plant?.id ?? `slot-${idx}`}
-                      style={styles.slot}
+                      style={homescreenStyle.slot}
                       ref={ref => {
                         if (ref) { slotRefs.current.set(idx, ref); }
                         else { slotRefs.current.delete(idx); }
@@ -427,7 +419,7 @@ const HomeScreen: React.FC = () => {
           ))}
 
           {plants.length === 0 && (
-            <Text style={styles.emptyHint}>
+            <Text style={homescreenStyle.emptyHint}>
               Tap the 'Add' button below to add your first plant 🌱
             </Text>
           )}
@@ -435,7 +427,7 @@ const HomeScreen: React.FC = () => {
       </View>
 
       {/* Garden footer — fence covers the top edge, buttons + sprinkler sit in front */}
-      <View style={[styles.footer, { paddingBottom: insets.bottom + 8 }]}>
+      <View style={[homescreenStyle.footer, { paddingBottom: insets.bottom + 8 }]}>
         <Svg height="100%" width="100%" style={StyleSheet.absoluteFill}>
           <Defs>
             <RadialGradient
@@ -456,12 +448,20 @@ const HomeScreen: React.FC = () => {
         </Svg>
 
         {/* Fence: spans full width, overflows upward to cover the plants/footer border */}
-        <View style={styles.fenceWrapper} pointerEvents="none">
-          <Fence width={SCREEN_WIDTH} height={104} />
+        <View style={homescreenStyle.fenceWrapper} pointerEvents="none">
+          <Fence width={screenWidth} height={104} />
+        </View>
+
+        <View style={homescreenStyle.leavesLeftCorner}>
+          <Leaves/>
+        </View>
+
+        <View style={homescreenStyle.leavesRightCorner}>
+          <Leaves/>
         </View>
 
         {/* Flowers: sit at the base of the fence pickets */}
-        <View style={styles.flowersRow} pointerEvents="none">
+        <View style={homescreenStyle.flowersRow} pointerEvents="none">
           <Flower width={57} height={37} />
           <Flower width={48} height={31} />
           <Flower width={57} height={37} />
@@ -470,21 +470,21 @@ const HomeScreen: React.FC = () => {
         </View>
 
         {/* Buttons row: Add | Sprinkler (draggable) | Clock — in front of fence */}
-        <View style={styles.footerButtons}>
+        <View style={homescreenStyle.footerButtons}>
           {/* Add Plant button */}
           <TouchableOpacity
-            style={[styles.footerBtn, plants.length >= MAX_PLANTS && styles.footerBtnDisabled]}
+            style={[homescreenStyle.footerBtn, plants.length >= MAX_PLANTS && homescreenStyle.footerBtnDisabled]}
             onPress={openAddCard}
             disabled={plants.length >= MAX_PLANTS}
             activeOpacity={0.7}
           >
-            <Text style={styles.footerBtnEmoji}>🌱</Text>
-            <Text style={styles.footerBtnLabel}>Add</Text>
+            <Text style={homescreenStyle.footerBtnEmoji}>🌱</Text>
+            <Text style={homescreenStyle.footerBtnLabel}>Add</Text>
           </TouchableOpacity>
 
           {/* Sprinkler — draggable, between the two buttons */}
           <View
-            style={styles.sprinklerInFooter}
+            style={homescreenStyle.sprinklerInFooter}
             {...panResponder.panHandlers}
           >
             <Sprinkler width={SPRINKLER_SIZE} height={SPRINKLER_SIZE} />
@@ -492,12 +492,12 @@ const HomeScreen: React.FC = () => {
 
           {/* Clock / notification time button */}
           <TouchableOpacity
-            style={styles.footerBtn}
+            style={homescreenStyle.footerBtn}
             onPress={() => setTimePickerVisible(true)}
             activeOpacity={0.7}
           >
-            <Text style={styles.footerBtnEmoji}>⏰</Text>
-            <Text style={styles.footerBtnLabel}>{formatTime(notifHour, notifMinute)}</Text>
+            <Text style={homescreenStyle.footerBtnEmoji}>⏰</Text>
+            <Text style={homescreenStyle.footerBtnLabel}>{formatTime(notifHour, notifMinute)}</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -506,7 +506,7 @@ const HomeScreen: React.FC = () => {
       {isDragging && (
         <Animated.View
           style={[
-            styles.floatingSprinklerActive,
+            homescreenStyle.floatingSprinklerActive,
             { left: dragX, top: dragY },
           ]}
           pointerEvents="none"
@@ -517,7 +517,7 @@ const HomeScreen: React.FC = () => {
             <Animated.View
               key={i}
               style={[
-                styles.waterDrop,
+                homescreenStyle.waterDrop,
                 {
                   opacity: drop.opacity,
                   transform: [
@@ -559,190 +559,5 @@ const HomeScreen: React.FC = () => {
     </SafeAreaView>
   );
 };
-
-/* ─── styles ─── */
-
-const styles = StyleSheet.create({
-  safe: {
-    flex: 1,
-    backgroundColor: '#8D7865',
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: H_PADDING,
-    paddingTop: 20,
-    paddingBottom: 16,
-    backgroundColor: '#D8F3DC',
-  },
-  appName: {
-    fontSize: 30,
-    fontWeight: '800',
-    color: '#1C3D1C',
-    letterSpacing: -0.5,
-  },
-  subtitle: {
-    fontSize: 13,
-    color: '#000000',
-    fontWeight: '500',
-    marginTop: 2,
-  },
-  badge: {
-    backgroundColor: '#2D6A4F',
-    borderRadius: 20,
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-  },
-  badgeText: {
-    color: '#FFFFFF',
-    fontWeight: '700',
-    fontSize: 14,
-  },
-  scroll: {
-    paddingHorizontal: H_PADDING,
-    paddingBottom: 16,
-  },
-  plantsArea: {
-    flex: 1,
-    backgroundColor: '#A3E3ED',
-    padding: 20,
-  },
-  shelfSection: {
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  row: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-end',
-    marginBottom: 0,
-    zIndex: 10,
-  },
-  slot: {
-    width: 60,
-    height: 80,
-    alignItems: 'center',
-    justifyContent: 'flex-end',
-  },
-  emptyHint: {
-    textAlign: 'center',
-    color: '#95D5B2',
-    fontSize: 14,
-    marginTop: 8,
-    fontStyle: 'italic',
-  },
-
-  /* footer */
-  footer: {
-    height: FOOTER_HEIGHT,
-    overflow: 'visible',
-    alignItems: 'center',
-    justifyContent: 'flex-end',
-    paddingBottom: 0,
-  },
-
-  fenceWrapper: {
-    position: 'absolute',
-    top: -36,
-    left: 0,
-    right: 0,
-    zIndex: 1,
-  },
-
-  //bottom of the fence flowers
-  flowersRow: {
-    position: 'absolute',
-    top: 50,
-    left: 0,
-    right: 0,
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    paddingHorizontal: 12,
-    zIndex: 2,
-  },
-
-  footerButtons: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 16,
-    zIndex: 10,
-    elevation: 10,
-    marginBottom: 12,
-  },
-
-  footerBtn: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    // backgroundColor: '#FFFFFF',
-    width: 68,
-    height: 68,
-    borderRadius: 34,
-    elevation: 6,
-    zIndex: 10,
-    // shadowColor: '#000',
-    // shadowOffset: { width: 0, height: 3 },
-    // shadowOpacity: 0.15,
-    // shadowRadius: 8,
-  },
-  footerBtnDisabled: {
-    opacity: 0.5,
-  },
-  footerBtnEmoji: {
-    fontSize: 28,
-  },
-  footerBtnLabel: {
-    fontSize: 10,
-    fontWeight: '600',
-    color: '#2D6A4F',
-    marginTop: 2,
-  },
-
-  sprinklerInFooter: {
-    zIndex: 10,
-    elevation: 10,
-    // backgroundColor: '#FFFFFF',
-    // borderRadius: 40,
-    padding: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-  },
-
-  sprinklerInFooterActive: {
-    zIndex: 10,
-    elevation: 10,
-    // backgroundColor: '#FFFFFF',
-    borderRadius: 40,
-    padding: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-  },
-
-  /* active floating sprinkler during drag */
-  floatingSprinklerActive: {
-    position: 'absolute',
-    width: SPRINKLER_SIZE,
-    height: SPRINKLER_SIZE,
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 999,
-    elevation: 60,
-  },
-
-  /* individual water drop */
-  waterDrop: {
-    position: 'absolute',
-    bottom: 2,
-    width: 5,
-    height: 7,
-    borderRadius: 4,
-    backgroundColor: '#1D3AA5',
-  },
-});
 
 export default HomeScreen;
