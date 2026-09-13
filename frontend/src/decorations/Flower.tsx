@@ -59,7 +59,7 @@ const Flower: React.FC<SvgProps> = (props) => (
                 gradientUnits="userSpaceOnUse"
             >
                 <Stop stopColor="#F1A5C2" />
-                <Stop offset={1} stopColor="#8B5F70" />
+                <Stop offset={1} stopColor="#fff" />
             </LinearGradient>
             <LinearGradient
                 id="e"
@@ -70,7 +70,7 @@ const Flower: React.FC<SvgProps> = (props) => (
                 gradientUnits="userSpaceOnUse"
             >
                 <Stop stopColor="#F1A5C2" />
-                <Stop offset={1} stopColor="#8B5F70" />
+                <Stop offset={1} stopColor="#fff" />
             </LinearGradient>
             <LinearGradient
                 id="f"
@@ -81,7 +81,7 @@ const Flower: React.FC<SvgProps> = (props) => (
                 gradientUnits="userSpaceOnUse"
             >
                 <Stop stopColor="#F1A5C2" />
-                <Stop offset={1} stopColor="#8B5F70" />
+                <Stop offset={1} stopColor="#fff" />
             </LinearGradient>
         </Defs>
     </Svg>

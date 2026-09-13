@@ -1,8 +1,10 @@
 import React from 'react';
-import { StyleSheet, TouchableOpacity, View } from 'react-native';
-import { POT_W, POT_CONTAINER_H } from '../decorations/FlowerPot';
+import { TouchableOpacity } from 'react-native';
+import Svg, { Circle, Defs, RadialGradient, Stop } from 'react-native-svg';
+import { POT_W } from '../decorations/FlowerPot';
 import FlowerPot from '../decorations/FlowerPot';
 import type { Plant } from '../types/Plant';
+import { AURA_COLOR, AURA_SIZE, AURA_WATERING_COLOR, plantStyle } from '../styles/plantStyle.ts';
 
 interface PlantCardProps {
   plant: Plant;
@@ -10,34 +12,56 @@ interface PlantCardProps {
   isBeingWatered: boolean;
 }
 
-/** Maps status name to aura colour. Healthy has no aura. */
-const AURA_COLOR: Record<string, string | undefined> = {
-  wilting:       'rgba(214, 40, 57, 0.35)',   // red
-  'needs water': 'rgba(224, 122, 95, 0.35)',  // orange
-};
+const AURA_R = AURA_SIZE / 2;
+const AURA_LEFT = -(AURA_SIZE - POT_W) / 2;
 
 const PlantCard: React.FC<PlantCardProps> = ({
   plant,
   onPress,
   isBeingWatered,
 }) => {
-  const auraColor = isBeingWatered
-    ? 'rgba(79, 195, 247, 0.35)'   // blue — sprinkler hover
+  const baseColor = isBeingWatered
+    ? AURA_WATERING_COLOR
     : AURA_COLOR[plant.status.name.toLowerCase()];
+
+  const gradId = isBeingWatered
+    ? 'auraGrad_watering'
+    : `auraGrad_${plant.status.name.replace(/\s+/g, '_')}`;
 
   return (
     <TouchableOpacity
       onPress={() => onPress(plant)}
       activeOpacity={0.85}
     >
-      {/* Status / watering aura behind the pot */}
-      {auraColor && (
-        <View
-          style={[
-            styles.aura,
-            { width: POT_W, height: POT_CONTAINER_H, backgroundColor: auraColor },
-          ]}
-        />
+      {/* Radial-gradient aura behind the pot */}
+      {baseColor && (
+        <Svg
+          width={AURA_SIZE}
+          height={AURA_SIZE}
+          style={[plantStyle.aura, { left: AURA_LEFT }]}
+        >
+          <Defs>
+            <RadialGradient
+              id={gradId}
+              cx="50%"
+              cy="50%"
+              rx="50%"
+              ry="50%"
+              fx="50%"
+              fy="50%"
+            >
+              <Stop offset="0%"   stopColor={baseColor} stopOpacity="0.7" />
+              <Stop offset="60%"  stopColor={baseColor} stopOpacity="0.25" />
+              <Stop offset="100%" stopColor={baseColor} stopOpacity="0" />
+            </RadialGradient>
+          </Defs>
+          <Circle
+            cx={AURA_R}
+            cy={AURA_R}
+            r={AURA_R}
+            fill={`url(#${gradId})`}
+          />
+        </Svg>
       )}
       <FlowerPot
         name={plant.name}
@@ -47,16 +71,4 @@ const PlantCard: React.FC<PlantCardProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
-  aura: {
-    position: 'absolute',
-    bottom: 0,
-    borderRadius: 18,
-    borderWidth: 2,
-    borderColor: 'rgba(255,255,255,0.15)',
-  },
-});
-
 export default PlantCard;
-
-

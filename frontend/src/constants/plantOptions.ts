@@ -16,6 +16,7 @@ export const AVAILABLE_SPECIES: Specie[] = [
   { id: 8,  name: 'Aloe Vera',     wateringDays: 14, emoji: '🌵' },
   { id: 9,  name: 'Monstera',      wateringDays: 7,  emoji: '🫧' },
   { id: 10, name: 'Lavender',      wateringDays: 5,  emoji: '💜' },
+  { id: 11, name: 'Mimosa Pudica', wateringDays: 4,  emoji: '☘️' },
 ];
 
 export const AVAILABLE_STATUSES: Status[] = [
