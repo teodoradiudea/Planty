@@ -46,12 +46,6 @@ export const cardStyle = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
     },
-    closeIcon: {
-        color: iconColor,
-        fontSize: 20,
-        fontWeight: '900',
-    },
-
 
     content: {
         alignItems: 'center',
@@ -163,12 +157,6 @@ export const cardStyle = StyleSheet.create({
     },
 
     //edit
-    editIcon: {
-        width: 10,
-        height: 10,
-        backgroundColor: 'rgba(255,255,255,0.2)',
-        borderRadius: 12,
-    },
     editButton: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -183,11 +171,6 @@ export const cardStyle = StyleSheet.create({
     },
 
     //save edit
-    tickIcon: {
-        color: iconColor,
-        fontSize: 14,
-        fontWeight: '700',
-    },
     tickButton: {
         backgroundColor: 'rgba(255,255,255,0.2)',
         borderRadius: 12,
@@ -226,9 +209,6 @@ export const cardStyle = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
     },
-    deleteIcon: {
-        fontSize: nameText,
-    },
 
 
 
@@ -257,7 +237,7 @@ export const cardStyle = StyleSheet.create({
     },
 
 
-    // specie piker popup
+    // specie picker popup
     pickerBackdrop: {
         flex: 1,
         backgroundColor: 'rgba(10, 30, 10, 0.4)',
@@ -267,7 +247,7 @@ export const cardStyle = StyleSheet.create({
     pickerSheet: {
         width: cardWidth,
         maxHeight: 0.5 * cardHeight,
-        backgroundColor: '#fff',
+        backgroundColor: '#1C3D1C',
         borderRadius: 16,
         paddingVertical: 12,
         paddingHorizontal: 4,
@@ -276,11 +256,13 @@ export const cardStyle = StyleSheet.create({
         shadowOffset: { width: 0, height: 8 },
         shadowOpacity: 0.25,
         shadowRadius: 16,
+        borderWidth: 1,
+        borderColor: 'rgba(104, 167, 77, 0.4)',
     },
     pickerTitle: {
         fontSize: nameText,
         fontWeight: '700',
-        // color: '#1C3D1C',
+        color: '#D8F3DC',
         textAlign: 'center',
         marginBottom: 8,
         paddingHorizontal: 16,
@@ -295,7 +277,9 @@ export const cardStyle = StyleSheet.create({
         marginHorizontal: 8,
     },
     pickerRowActive: {
-        backgroundColor: 'rgb(31 188 13 / 0.3)',
+        backgroundColor: 'rgba(104, 167, 77, 0.3)',
+        borderWidth: 1,
+        borderColor: 'rgba(104, 167, 77, 0.5)',
     },
     pickerEmoji: {
         fontSize: 22,
@@ -305,15 +289,15 @@ export const cardStyle = StyleSheet.create({
     },
     pickerLabel: {
         fontSize: specieText,
-        // color: '#2D6A4F',
+        color: '#D8F3DC',
         fontWeight: '600',
     },
     pickerLabelActive: {
-        // color: '#68A64D',
+        color: '#95D5B2',
     },
     pickerSub: {
         fontSize: infoText,
-        // color: '#9E9E9E',
+        color: 'rgba(216, 243, 220, 0.6)',
         marginTop: 1,
     },
 

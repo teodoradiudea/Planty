@@ -1,13 +1,14 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
-  Alert,
   Modal,
+  StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
+
 import { STATUS_COLOR, STATUS_COLOR_FALLBACK } from '../constants/plantOptions';
 import { computeStatus } from '../services/statusComputer';
 import type { Plant } from '../types/Plant';
@@ -93,10 +94,12 @@ const PlantInfoCard: React.FC<PlantInfoCardProps> = ({
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [nameValue, setNameValue] = useState(plant.name);
+  const [deleteConfirmVisible, setDeleteConfirmVisible] = useState(false);
   const inputRef = useRef<TextInput>(null);
 
   // last-watered editing state
   const [wateredDaysAgo, setWateredDaysAgo] = useState(0);
+
 
   // sync name + last-watered when a different plant is opened or modal re-opens
   useEffect(() => {
@@ -128,15 +131,9 @@ const PlantInfoCard: React.FC<PlantInfoCardProps> = ({
   };
 
   const confirmDelete = () => {
-    Alert.alert(
-      'Delete Plant',
-      `Remove "${plant.name}" from your collection?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Delete', style: 'destructive', onPress: onDelete },
-      ],
-    );
+    setDeleteConfirmVisible(true);
   };
+
 
   const adjustWateredDays = (delta: number) => {
     const next = Math.max(0, Math.min(wateredDaysAgo + delta, MAX_DAYS_AGO));
@@ -251,8 +248,162 @@ const PlantInfoCard: React.FC<PlantInfoCardProps> = ({
           </LinearGradient>
         </TouchableOpacity>
       </TouchableOpacity>
+
+      {/* ── Delete Confirmation Modal ──────────────────────────────────── */}
+      <Modal
+        visible={deleteConfirmVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setDeleteConfirmVisible(false)}
+      >
+        <TouchableOpacity
+          style={deleteStyles.backdrop}
+          activeOpacity={1}
+          onPress={() => setDeleteConfirmVisible(false)}
+        >
+          <TouchableOpacity activeOpacity={1} onPress={() => {}}>
+            <LinearGradient
+              colors={['#3B2012', '#6B3A20']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 0, y: 1 }}
+              style={deleteStyles.dialog}
+            >
+              {/* icon */}
+              <View style={deleteStyles.iconCircle}>
+                <Text style={deleteStyles.iconEmoji}>🗑️</Text>
+              </View>
+
+              {/* title */}
+              <Text style={deleteStyles.title}>Delete Plant?</Text>
+
+              {/* message */}
+              <Text style={deleteStyles.message}>
+                Remove{' '}
+                <Text style={deleteStyles.plantNameHighlight}>
+                  "{plant.name}"
+                </Text>{' '}
+                from your collection? This action cannot be undone.
+              </Text>
+
+              {/* buttons */}
+              <View style={deleteStyles.buttonRow}>
+                <TouchableOpacity
+                  style={deleteStyles.cancelBtn}
+                  onPress={() => setDeleteConfirmVisible(false)}
+                  activeOpacity={0.75}
+                >
+                  <Text style={deleteStyles.cancelText}>Keep it</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={deleteStyles.deleteBtn}
+                  onPress={() => {
+                    setDeleteConfirmVisible(false);
+                    onDelete();
+                  }}
+                  activeOpacity={0.75}
+                >
+                  <Text style={deleteStyles.deleteText}>Delete</Text>
+                </TouchableOpacity>
+              </View>
+            </LinearGradient>
+          </TouchableOpacity>
+        </TouchableOpacity>
+      </Modal>
     </Modal>
   );
 };
+
+/* ── Delete confirmation styles ─────────────────────────────────────────── */
+
+const deleteStyles = StyleSheet.create({
+  backdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.65)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  dialog: {
+    width: 300,
+    borderRadius: 24,
+    paddingHorizontal: 24,
+    paddingTop: 28,
+    paddingBottom: 24,
+    alignItems: 'center',
+    elevation: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.4,
+    shadowRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 160, 100, 0.25)',
+  },
+  iconCircle: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: 'rgba(255, 255, 255, 0.12)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
+    borderWidth: 1.5,
+    borderColor: 'rgba(255, 160, 100, 0.35)',
+  },
+  iconEmoji: {
+    fontSize: 32,
+  },
+  title: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    marginBottom: 10,
+    letterSpacing: 0.3,
+  },
+  message: {
+    fontSize: 14,
+    color: 'rgba(255, 255, 255, 0.75)',
+    textAlign: 'center',
+    lineHeight: 20,
+    marginBottom: 24,
+  },
+  plantNameHighlight: {
+    color: '#FFA07A',
+    fontWeight: '700',
+  },
+  buttonRow: {
+    flexDirection: 'row',
+    gap: 12,
+    width: '100%',
+  },
+  cancelBtn: {
+    flex: 1,
+    paddingVertical: 13,
+    borderRadius: 14,
+    borderWidth: 1.5,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+  },
+  cancelText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: 'rgba(255, 255, 255, 0.85)',
+  },
+  deleteBtn: {
+    flex: 1,
+    paddingVertical: 13,
+    borderRadius: 14,
+    backgroundColor: '#C0392B',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#E74C3C',
+  },
+  deleteText: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    letterSpacing: 0.5,
+  },
+});
 
 export default PlantInfoCard;

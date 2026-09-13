@@ -479,7 +479,6 @@ const HomeScreen: React.FC = () => {
             activeOpacity={0.7}
           >
             <Text style={homescreenStyle.footerBtnEmoji}>🌱</Text>
-            <Text style={homescreenStyle.footerBtnLabel}>Add</Text>
           </TouchableOpacity>
 
           {/* Sprinkler — draggable, between the two buttons */}
@@ -497,7 +496,6 @@ const HomeScreen: React.FC = () => {
             activeOpacity={0.7}
           >
             <Text style={homescreenStyle.footerBtnEmoji}>⏰</Text>
-            <Text style={homescreenStyle.footerBtnLabel}>{formatTime(notifHour, notifMinute)}</Text>
           </TouchableOpacity>
         </View>
       </View>

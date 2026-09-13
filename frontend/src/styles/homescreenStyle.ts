@@ -131,23 +131,16 @@ export const homescreenStyle = StyleSheet.create({
         justifyContent: 'center',
         gap: 16,
         zIndex: 10,
-        elevation: 10,
-        marginBottom: 12,
+        top: -30,
     },
 
     footerBtn: {
         alignItems: 'center',
         justifyContent: 'center',
-        // backgroundColor: '#FFFFFF',
         width: 68,
         height: 68,
         borderRadius: 34,
-        elevation: 6,
         zIndex: 10,
-        // shadowColor: '#000',
-        // shadowOffset: { width: 0, height: 3 },
-        // shadowOpacity: 0.15,
-        // shadowRadius: 8,
     },
     footerBtnDisabled: {
         opacity: 0.5,
@@ -155,30 +148,10 @@ export const homescreenStyle = StyleSheet.create({
     footerBtnEmoji: {
         fontSize: 28,
     },
-    footerBtnLabel: {
-        fontSize: 10,
-        fontWeight: '600',
-        color: '#2D6A4F',
-        marginTop: 2,
-    },
 
     sprinklerInFooter: {
         zIndex: 10,
         elevation: 10,
-        // backgroundColor: '#FFFFFF',
-        // borderRadius: 40,
-        padding: 8,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 3 },
-        shadowOpacity: 0.15,
-        shadowRadius: 8,
-    },
-
-    sprinklerInFooterActive: {
-        zIndex: 10,
-        elevation: 10,
-        // backgroundColor: '#FFFFFF',
-        borderRadius: 40,
         padding: 8,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 3 },
