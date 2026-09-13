@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
+  Alert,
   Modal,
   StyleSheet,
   Text,
@@ -71,8 +72,6 @@ const dateLabelStr = (daysAgo: number): string => {
 
 const MAX_DAYS_AGO = 7;
 
-/* ─── props ─────────────────────────────────────────────────────────────── */
-
 interface PlantInfoCardProps {
   plant: Plant;
   visible: boolean;
@@ -81,8 +80,6 @@ interface PlantInfoCardProps {
   onSaveLastWatered: (newDate: string) => void;
   onDelete: () => void;
 }
-
-/* ─── component ─────────────────────────────────────────────────────────── */
 
 const PlantInfoCard: React.FC<PlantInfoCardProps> = ({
   plant,
@@ -99,7 +96,6 @@ const PlantInfoCard: React.FC<PlantInfoCardProps> = ({
 
   // last-watered editing state
   const [wateredDaysAgo, setWateredDaysAgo] = useState(0);
-
 
   // sync name + last-watered when a different plant is opened or modal re-opens
   useEffect(() => {
@@ -268,15 +264,8 @@ const PlantInfoCard: React.FC<PlantInfoCardProps> = ({
               end={{ x: 0, y: 1 }}
               style={deleteStyles.dialog}
             >
-              {/* icon */}
-              <View style={deleteStyles.iconCircle}>
-                <Text style={deleteStyles.iconEmoji}>🗑️</Text>
-              </View>
 
-              {/* title */}
               <Text style={deleteStyles.title}>Delete Plant?</Text>
-
-              {/* message */}
               <Text style={deleteStyles.message}>
                 Remove{' '}
                 <Text style={deleteStyles.plantNameHighlight}>

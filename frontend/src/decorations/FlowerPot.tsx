@@ -24,26 +24,22 @@ const FlowerPot: React.FC<FlowerPotProps> = ({
 }) => {
   return (
     <View style={[styles.container, { width: POT_W, height: POT_CONTAINER_H }]}>
-      {/* Emoji floats above the pot */}
       {emoji ? (
-        <Text style={[styles.emoji, { fontSize: POT_W * 0.28 }]}>{emoji}</Text>
+        <Text style={[styles.emoji, { fontSize: POT_W * 0.5 }]}>{emoji}</Text>
       ) : null}
 
-      {/* The pot SVG — sits at the bottom of the container */}
       <Svg
         width={POT_W}
         height={POT_H}
         viewBox={`0 0 ${SVG_W} ${SVG_H}`}
         fill="none"
       >
-        {/* Pot body */}
         <Path
           fill="#D19475"
           stroke="#B37B5F"
           strokeWidth={3}
           d="m170.769 33-17.411 82.905A19 19 0 0 1 134.764 131H47.14a19 19 0 0 1-18.684-15.544L13.202 33H170.77Z"
         />
-        {/* Pot rim */}
         <Rect
           width={182}
           height={30}
@@ -56,7 +52,6 @@ const FlowerPot: React.FC<FlowerPotProps> = ({
         />
       </Svg>
 
-      {/* Plant name overlaid on the rim */}
       {name ? (
         <Text
           style={[

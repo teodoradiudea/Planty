@@ -3,14 +3,16 @@ import {
   Alert,
   Animated,
   PanResponder,
-  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from 'react-native';
+
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Defs, RadialGradient, Rect, Stop } from 'react-native-svg';
+import LinearGradient from 'react-native-linear-gradient';
+
 import AddPlantCard from '../components/AddPlantCard';
 import NotificationTimePicker from '../components/NotificationTimePicker';
 import PlantCard from '../components/PlantCard';
@@ -36,10 +38,11 @@ import {
   cancelPlantNotification,
 } from '../services/notifications';
 import type { Plant, PlantFormData } from '../types/Plant';
-import { todayStr, formatTime } from '../constants/formatting.ts';
+import { todayStr } from '../constants/formatting.ts';
 import {H_PADDING, homescreenStyle, SPRINKLER_SIZE} from "../styles/homescreenStyle.ts";
 import {screenWidth} from "../constants/sizes.ts";
 import Leaves from "../decorations/Leaves.tsx";
+import FlowerPot from "../decorations/FlowerPot.tsx";
 
 const NUM_DROPS = 8;
 const MAX_PLANTS = 9;
@@ -50,7 +53,6 @@ const SHELF_WIDTH = screenWidth - H_PADDING * 2;
 const HomeScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
 
-  /* ── core state ── */
   const [plants, setPlants] = useState<Plant[]>([]);
   const [addCardVisible, setAddCardVisible] = useState(false);
   const [infoCardVisible, setInfoCardVisible] = useState(false);
@@ -59,11 +61,9 @@ const HomeScreen: React.FC = () => {
   const [notifHour, setNotifHour] = useState(17);
   const [notifMinute, setNotifMinute] = useState(0);
 
-  /* ── sprinkler drag state ── */
   const [isDragging, setIsDragging] = useState(false);
   const [wateringIdx, setWateringIdx] = useState<number | null>(null);
 
-  /* ── refs (stable across renders, accessible inside PanResponder) ── */
   const plantsRef = useRef<Plant[]>([]);
   useEffect(() => { plantsRef.current = plants; }, [plants]);
 
@@ -77,14 +77,13 @@ const HomeScreen: React.FC = () => {
 
   const dragX = useRef(new Animated.Value(0)).current;
   const dragY = useRef(new Animated.Value(0)).current;
+  const sprinklerRotation = useRef(new Animated.Value(0)).current;
 
-  /* sprinkler home-position animation */
   const sprinklerOpacity = useRef(new Animated.Value(1)).current;
   const sprinklerHomeRef = useRef<View>(null);
   const sprinklerHomePos = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
   const isReturning = useRef(false);
 
-  /* water-drop animated values */
   const dropAnims = useRef(
     Array.from({ length: NUM_DROPS }, () => ({
       translateY: new Animated.Value(0),
@@ -94,8 +93,6 @@ const HomeScreen: React.FC = () => {
   ).current;
   const waterAnimRunning = useRef(false);
 
-
-  /* ── data loading ── */
   const loadPlants = useCallback(() => {
     try {
       setPlants(getAllPlants());
@@ -114,7 +111,6 @@ const HomeScreen: React.FC = () => {
     }
   }, [loadPlants]);
 
-  /* ── plant CRUD handlers ── */
   const openAddCard = () => setAddCardVisible(true);
 
   const openInfoCard = (plant: Plant) => {
@@ -185,8 +181,6 @@ const HomeScreen: React.FC = () => {
       console.warn('[HomeScreen] reschedule error:', err);
     }
   };
-
-  /* ── sprinkler helpers (use refs only — safe for PanResponder) ── */
 
   const clearHover = () => {
     if (hoverTimerRef.current) {
@@ -270,7 +264,14 @@ const HomeScreen: React.FC = () => {
     });
   }, [dropAnims]);
 
-  /* ── PanResponder (created once, reads refs) ── */
+  useEffect(() => {
+    Animated.spring(sprinklerRotation, {
+      toValue: wateringIdx !== null ? 45 : 0,
+      useNativeDriver: false,
+      tension: 180,
+      friction: 10,
+    }).start();
+  }, [wateringIdx, sprinklerRotation]);
 
   const returnSprinklerHome = useCallback(() => {
     clearHover();
@@ -296,7 +297,6 @@ const HomeScreen: React.FC = () => {
       if (finished) {
         setIsDragging(false);
         isReturning.current = false;
-        // restore footer placeholder
         Animated.timing(sprinklerOpacity, {
           toValue: 1,
           duration: 150,
@@ -315,15 +315,13 @@ const HomeScreen: React.FC = () => {
       if (isReturning.current) { return; }
       const { pageX, pageY } = evt.nativeEvent;
 
-      // Measure & store the home position of the footer sprinkler
       sprinklerHomeRef.current?.measureInWindow((hx, hy) => {
         sprinklerHomePos.current = { x: hx, y: hy };
       });
 
       dragX.setValue(pageX - SPRINKLER_SIZE / 2);
-      dragY.setValue(pageY - SPRINKLER_SIZE);
+      dragY.setValue(pageY - SPRINKLER_SIZE * 2);
 
-      // Hide footer placeholder
       sprinklerOpacity.setValue(0);
       setIsDragging(true);
       justWateredRef.current.clear();
@@ -332,12 +330,11 @@ const HomeScreen: React.FC = () => {
 
     onPanResponderMove: (_, gs) => {
       dragX.setValue(gs.moveX - SPRINKLER_SIZE / 2);
-      dragY.setValue(gs.moveY - SPRINKLER_SIZE);
+      dragY.setValue(gs.moveY - SPRINKLER_SIZE * 2);
 
       const idx = findHoveredSlot(gs.moveX, gs.moveY);
       const prevIdx = hoveredIdxRef.current;
 
-      // Determine if current slot is a valid watering target
       let isValid = false;
       if (idx !== null && !justWateredRef.current.has(idx)) {
         const plant = plantsRef.current[idx];
@@ -348,7 +345,6 @@ const HomeScreen: React.FC = () => {
       }
 
       if (isValid && idx !== prevIdx) {
-        // New valid hover target → start timer + animation
         clearHover();
         hoveredIdxRef.current = idx;
         setWateringIdx(idx);
@@ -364,7 +360,6 @@ const HomeScreen: React.FC = () => {
               status: computeStatus(today, p.watering_days),
             };
             updatePlant(updated);
-            // Sync ref immediately to prevent re-trigger
             plantsRef.current = plantsRef.current.map((pl, i) =>
               i === idx ? updated : pl,
             );
@@ -377,7 +372,6 @@ const HomeScreen: React.FC = () => {
           hoveredIdxRef.current = null;
         }, 2000);
       } else if (!isValid && prevIdx !== null) {
-        // Moved away from valid target
         clearHover();
         stopWaterDrops();
         setWateringIdx(null);
@@ -394,8 +388,6 @@ const HomeScreen: React.FC = () => {
     },
   }), [dragX, dragY, loadPlants, returnSprinklerHome, sprinklerOpacity, startWaterDrops, stopWaterDrops]);
 
-
-  /* ── grid data ── */
   const slots: (Plant | null)[] = Array.from(
     { length: MAX_PLANTS },
     (_, i) => plants[i] ?? null,
@@ -406,13 +398,17 @@ const HomeScreen: React.FC = () => {
     rows.push(slots.slice(s * COLS, s * COLS + COLS));
   }
 
-  /* ── render ── */
   return (
     <SafeAreaView style={homescreenStyle.safe} edges={['top', 'left', 'right']}>
       {/* Header */}
-      <View style={homescreenStyle.header}>
+      <LinearGradient
+        colors={['#8D7865', '#A3E3ED']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 0, y: 1 }}
+        style={homescreenStyle.header}
+      >
         <View>
-          <Text style={homescreenStyle.appName}>🌱 Planty</Text>
+          <Text style={homescreenStyle.appName}>Planty</Text>
           <Text style={homescreenStyle.subtitle}>Your plant collection</Text>
         </View>
         <View style={homescreenStyle.badge}>
@@ -420,18 +416,15 @@ const HomeScreen: React.FC = () => {
             {plants.length}/{MAX_PLANTS}
           </Text>
         </View>
-      </View>
+      </LinearGradient>
+
 
       {/* Plants area */}
       <View style={homescreenStyle.plantsArea}>
-        <ScrollView
-          contentContainerStyle={homescreenStyle.scroll}
-          showsVerticalScrollIndicator={false}
-          scrollEnabled={!isDragging}
-        >
+        <View style={homescreenStyle.scroll}>
           {rows.map((row, shelfIdx) => (
             <View key={shelfIdx} style={homescreenStyle.shelfSection}>
-              <View style={[homescreenStyle.row, { width: SHELF_WIDTH * 0.65 }]}>
+              <View style={homescreenStyle.row}>
                 {row.map((plant, colIdx) => {
                   const idx = shelfIdx * COLS + colIdx;
                   const isBeingWatered = wateringIdx === idx;
@@ -465,8 +458,9 @@ const HomeScreen: React.FC = () => {
               Tap the 'Add' button below to add your first plant 🌱
             </Text>
           )}
-        </ScrollView>
+        </View>
       </View>
+
 
       {/* Garden footer — fence covers the top edge, buttons + sprinkler sit in front */}
       <View style={[homescreenStyle.footer, { paddingBottom: insets.bottom + 8 }]}>
@@ -511,17 +505,20 @@ const HomeScreen: React.FC = () => {
           <Flower width={57} height={37} />
         </View>
 
-        {/* Buttons row: Add | Sprinkler (draggable) | Clock — in front of fence */}
         <View style={homescreenStyle.footerButtons}>
           {/* Add Plant button */}
           <TouchableOpacity
-            style={[homescreenStyle.footerBtn, plants.length >= MAX_PLANTS && homescreenStyle.footerBtnDisabled]}
+            style={[
+              homescreenStyle.footerBtn,
+              plants.length >= MAX_PLANTS && homescreenStyle.footerBtnDisabled,
+              { transform: [{ translateY: -16 }] },
+            ]}
             onPress={openAddCard}
             disabled={plants.length >= MAX_PLANTS}
-            activeOpacity={0.7}
           >
-            <Text style={homescreenStyle.footerBtnEmoji}>🌱</Text>
+            <FlowerPot name={'Add'}/>
           </TouchableOpacity>
+
 
           {/* Sprinkler — draggable, between the two buttons */}
           <Animated.View
@@ -543,7 +540,7 @@ const HomeScreen: React.FC = () => {
         </View>
       </View>
 
-      {/* Floating sprinkler overlay (visible during drag and return animation) */}
+      {/* Floating sprinkler overlay */}
       {isDragging && (
         <Animated.View
           style={[
@@ -552,7 +549,18 @@ const HomeScreen: React.FC = () => {
           ]}
           pointerEvents="none"
         >
-          <Sprinkler width={SPRINKLER_SIZE} height={SPRINKLER_SIZE} />
+          <Animated.View
+            style={{
+              transform: [{
+                rotate: sprinklerRotation.interpolate({
+                  inputRange: [0, 45],
+                  outputRange: ['0deg', '45deg'],
+                }),
+              }],
+            }}
+          >
+            <Sprinkler width={SPRINKLER_SIZE} height={SPRINKLER_SIZE} />
+          </Animated.View>
           {/* Water drops */}
           {dropAnims.map((drop, i) => (
             <Animated.View

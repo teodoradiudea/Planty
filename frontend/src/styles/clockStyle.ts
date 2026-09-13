@@ -8,8 +8,6 @@ export const DRUM_H = ITEM_H * VISIBLE;
 export const PAD = ITEM_H * HALF;
 
 export const clockStyle = StyleSheet.create({
-
-    // ── modal backdrop + floating card ───────────────────────────────────────
     backdrop: {
         flex: 1,
         backgroundColor: 'rgba(0,0,0,0.5)',
@@ -25,7 +23,7 @@ export const clockStyle = StyleSheet.create({
         paddingTop: 12,
         paddingBottom: 28,
         marginHorizontal: 12,
-        marginBottom: 24,
+        marginBottom: 54,
     },
     handle: {
         alignSelf: 'center',
@@ -36,7 +34,6 @@ export const clockStyle = StyleSheet.create({
         marginBottom: 16,
     },
 
-    // ── header row ───────────────────────────────────────────────────────────
     headerRow: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -62,7 +59,6 @@ export const clockStyle = StyleSheet.create({
         marginTop: 2,
     },
 
-    // ── time preview pill ────────────────────────────────────────────────────
     previewBox: {
         alignSelf: 'center',
         backgroundColor: '#1C3D1C',
@@ -89,10 +85,9 @@ export const clockStyle = StyleSheet.create({
         fontFamily: FONT_FAMILY,
     },
 
-    // ── drum-roll columns ────────────────────────────────────────────────────
     drumRow: {
         flexDirection: 'row',
-        alignItems: 'flex-end',        // align labels at top, drums fill below
+        alignItems: 'flex-end',
         justifyContent: 'center',
         marginBottom: 20,
     },
@@ -110,20 +105,17 @@ export const clockStyle = StyleSheet.create({
         marginBottom: 8,
         fontFamily: FONT_FAMILY,
     },
-    // The wrapper must have an explicit height — do NOT use flex here,
-    // or the FlatList will collapse to 0 inside a flex-row parent.
     drumWrapper: {
         width: '100%',
         height: DRUM_H,
         overflow: 'hidden',
         position: 'relative',
     },
-    // Green highlight behind the centre row
     selectionOverlay: {
         position: 'absolute',
         left: 6,
         right: 6,
-        top: ITEM_H * HALF,   // e.g. 56*2 = 112 for VISIBLE=5
+        top: ITEM_H * HALF,
         height: ITEM_H,
         borderRadius: 12,
         backgroundColor: '#D8F3DC',
@@ -132,9 +124,7 @@ export const clockStyle = StyleSheet.create({
         zIndex: 0,
     },
     drumList: {
-        // no flex — let the parent drumWrapper's explicit height control size
     },
-    // paddingVertical = PAD makes the first & last items centre-able
     drumContent: {
         paddingVertical: PAD,
     },
@@ -156,10 +146,8 @@ export const clockStyle = StyleSheet.create({
         fontFamily: FONT_FAMILY,
     },
 
-    // ── colon separator ───────────────────────────────────────────────────────
     colonWrapper: {
         width: 32,
-        // vertically align with the drum centre row
         marginBottom: (DRUM_H - ITEM_H) / 2,
         alignItems: 'center',
         justifyContent: 'center',
@@ -171,7 +159,6 @@ export const clockStyle = StyleSheet.create({
         color: '#1C3D1C',
     },
 
-    // ── action buttons ────────────────────────────────────────────────────────
     buttonRow: {
         flexDirection: 'row',
         gap: 12,

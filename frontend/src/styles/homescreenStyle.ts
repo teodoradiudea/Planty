@@ -18,31 +18,36 @@ export const homescreenStyle = StyleSheet.create({
         paddingHorizontal: H_PADDING,
         paddingTop: 20,
         paddingBottom: 16,
-        backgroundColor: '#D8F3DC',
     },
     appName: {
         fontSize: 30,
         fontWeight: '800',
-        color: '#1C3D1C',
+        color: '#FFFFFF',
         letterSpacing: -0.5,
+        textShadowColor: 'rgba(0,0,0,0.25)',
+        textShadowOffset: { width: 0, height: 1 },
+        textShadowRadius: 3,
     },
     subtitle: {
         fontSize: 13,
-        color: '#000000',
+        color: 'rgba(255,255,255,0.85)',
         fontWeight: '500',
         marginTop: 2,
     },
     badge: {
-        backgroundColor: '#2D6A4F',
+        backgroundColor: 'rgba(0,0,0,0.25)',
         borderRadius: 20,
         paddingHorizontal: 14,
         paddingVertical: 6,
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.3)',
     },
     badgeText: {
         color: '#FFFFFF',
         fontWeight: '700',
         fontSize: 14,
     },
+
     scroll: {
         paddingHorizontal: H_PADDING,
         paddingBottom: 16,
@@ -50,7 +55,7 @@ export const homescreenStyle = StyleSheet.create({
     plantsArea: {
         flex: 1,
         backgroundColor: '#A3E3ED',
-        padding: 20,
+        padding: 10,
     },
     shelfSection: {
         alignItems: 'center',
@@ -64,11 +69,12 @@ export const homescreenStyle = StyleSheet.create({
         zIndex: 10,
     },
     slot: {
-        width: 60,
-        height: 80,
+        width: 90,
+        height: 90,
         alignItems: 'center',
         justifyContent: 'flex-end',
     },
+
     emptyHint: {
         textAlign: 'center',
         color: '#95D5B2',
@@ -131,7 +137,7 @@ export const homescreenStyle = StyleSheet.create({
         justifyContent: 'center',
         gap: 16,
         zIndex: 10,
-        top: -30,
+        top: -40,
     },
 
     footerBtn: {
@@ -141,22 +147,23 @@ export const homescreenStyle = StyleSheet.create({
         height: 68,
         borderRadius: 34,
         zIndex: 10,
+        overflow: 'visible',
     },
+
     footerBtnDisabled: {
         opacity: 0.5,
     },
     footerBtnEmoji: {
-        fontSize: 28,
+        fontSize: 50,
     },
 
     sprinklerInFooter: {
+        width: 68,
+        height: 68,
+        alignItems: 'center',
+        justifyContent: 'center',
         zIndex: 10,
         elevation: 10,
-        padding: 8,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 3 },
-        shadowOpacity: 0.15,
-        shadowRadius: 8,
     },
 
     /* active floating sprinkler during drag */
