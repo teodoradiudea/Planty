@@ -78,6 +78,12 @@ const HomeScreen: React.FC = () => {
   const dragX = useRef(new Animated.Value(0)).current;
   const dragY = useRef(new Animated.Value(0)).current;
 
+  /* sprinkler home-position animation */
+  const sprinklerOpacity = useRef(new Animated.Value(1)).current;
+  const sprinklerHomeRef = useRef<View>(null);
+  const sprinklerHomePos = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
+  const isReturning = useRef(false);
+
   /* water-drop animated values */
   const dropAnims = useRef(
     Array.from({ length: NUM_DROPS }, () => ({
@@ -87,6 +93,7 @@ const HomeScreen: React.FC = () => {
     })),
   ).current;
   const waterAnimRunning = useRef(false);
+
 
   /* ── data loading ── */
   const loadPlants = useCallback(() => {
@@ -265,15 +272,59 @@ const HomeScreen: React.FC = () => {
 
   /* ── PanResponder (created once, reads refs) ── */
 
+  const returnSprinklerHome = useCallback(() => {
+    clearHover();
+    stopWaterDrops();
+    setWateringIdx(null);
+    hoveredIdxRef.current = null;
+    justWateredRef.current.clear();
+    isReturning.current = true;
+
+    const { x, y } = sprinklerHomePos.current;
+    Animated.spring(dragX, {
+      toValue: x,
+      useNativeDriver: false,
+      tension: 120,
+      friction: 8,
+    }).start();
+    Animated.spring(dragY, {
+      toValue: y,
+      useNativeDriver: false,
+      tension: 120,
+      friction: 8,
+    }).start(({ finished }) => {
+      if (finished) {
+        setIsDragging(false);
+        isReturning.current = false;
+        // restore footer placeholder
+        Animated.timing(sprinklerOpacity, {
+          toValue: 1,
+          duration: 150,
+          useNativeDriver: false,
+        }).start();
+      }
+    });
+  }, [dragX, dragY, sprinklerOpacity, stopWaterDrops]);
+
   const panResponder = useMemo(() => PanResponder.create({
     onStartShouldSetPanResponder: () => true,
     onMoveShouldSetPanResponder: () => true,
     onShouldBlockNativeResponder: () => true,
 
     onPanResponderGrant: (evt) => {
+      if (isReturning.current) { return; }
       const { pageX, pageY } = evt.nativeEvent;
+
+      // Measure & store the home position of the footer sprinkler
+      sprinklerHomeRef.current?.measureInWindow((hx, hy) => {
+        sprinklerHomePos.current = { x: hx, y: hy };
+      });
+
       dragX.setValue(pageX - SPRINKLER_SIZE / 2);
       dragY.setValue(pageY - SPRINKLER_SIZE);
+
+      // Hide footer placeholder
+      sprinklerOpacity.setValue(0);
       setIsDragging(true);
       justWateredRef.current.clear();
       measureSlots();
@@ -335,23 +386,14 @@ const HomeScreen: React.FC = () => {
     },
 
     onPanResponderRelease: () => {
-      clearHover();
-      stopWaterDrops();
-      setIsDragging(false);
-      setWateringIdx(null);
-      hoveredIdxRef.current = null;
-      justWateredRef.current.clear();
+      returnSprinklerHome();
     },
 
     onPanResponderTerminate: () => {
-      clearHover();
-      stopWaterDrops();
-      setIsDragging(false);
-      setWateringIdx(null);
-      hoveredIdxRef.current = null;
-      justWateredRef.current.clear();
+      returnSprinklerHome();
     },
-  }), [dragX, dragY, loadPlants, startWaterDrops, stopWaterDrops]);
+  }), [dragX, dragY, loadPlants, returnSprinklerHome, sprinklerOpacity, startWaterDrops, stopWaterDrops]);
+
 
   /* ── grid data ── */
   const slots: (Plant | null)[] = Array.from(
@@ -482,12 +524,13 @@ const HomeScreen: React.FC = () => {
           </TouchableOpacity>
 
           {/* Sprinkler — draggable, between the two buttons */}
-          <View
-            style={homescreenStyle.sprinklerInFooter}
+          <Animated.View
+            ref={sprinklerHomeRef}
+            style={[homescreenStyle.sprinklerInFooter, { opacity: sprinklerOpacity }]}
             {...panResponder.panHandlers}
           >
             <Sprinkler width={SPRINKLER_SIZE} height={SPRINKLER_SIZE} />
-          </View>
+          </Animated.View>
 
           {/* Clock / notification time button */}
           <TouchableOpacity
@@ -500,7 +543,7 @@ const HomeScreen: React.FC = () => {
         </View>
       </View>
 
-      {/* Floating sprinkler overlay (visible only during drag) */}
+      {/* Floating sprinkler overlay (visible during drag and return animation) */}
       {isDragging && (
         <Animated.View
           style={[
