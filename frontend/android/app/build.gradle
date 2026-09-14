@@ -57,7 +57,7 @@ react {
 /**
  * Set this to true to Run Proguard on Release builds to minify the Java bytecode.
  */
-def enableProguardInReleaseBuilds = false
+def enableProguardInReleaseBuilds = true
 
 /**
  * The preferred build flavor of JavaScriptCore (JSC)
@@ -107,12 +107,7 @@ android {
     }
 }
 
-// Copy vector-icon fonts into Android assets so Ionicons renders correctly
-task copyFonts(type: Copy) {
-    from("${rootDir}/../node_modules/react-native-vector-icons/Fonts")
-    into("${projectDir}/src/main/assets/fonts")
-}
-preBuild.dependsOn(copyFonts)
+
 
 dependencies {
     // The version of react-native is set by the React Native Gradle Plugin

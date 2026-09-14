@@ -17,14 +17,12 @@ module.exports = {
     // on their ESM / native code
     'react-native-linear-gradient':
       '<rootDir>/__tests__/__mocks__/react-native-linear-gradient',
-    'react-native-vector-icons/(.*)':
-      '<rootDir>/__tests__/__mocks__/react-native-vector-icons',
   },
 
   // Allow Jest's Babel transformer to process these node_modules
   // (they ship ESM that Node / Jest can't parse by default)
   transformIgnorePatterns: [
-    'node_modules/(?!(react-native|@react-native|react-native-linear-gradient|react-native-vector-icons|@notifee)/)',
+    'node_modules/(?!(react-native|@react-native|react-native-linear-gradient|@notifee)/)',
   ],
 
   setupFiles: ['<rootDir>/jest.setup.js'],
