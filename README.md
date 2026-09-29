@@ -1,5 +1,5 @@
 <div align="center">
-  <h1 style="color: #68A64D;">🌿 Planty 🌿</h1>
+  <h1 style="color: #68A64D;">Planty</h1>
   <p style="color: #A1D65C; font-size: 1.2em; font-weight: bold;">
     Your personal offline-first digital garden
   </p>
@@ -8,7 +8,7 @@
 <br/>
 
 <div align="center">
-  <img src="./frontend/src/PlantyScreenshoot.jpeg" width="300" alt="Planty App Screenshot" style="border-radius: 16px; border: 4px solid #68A64D; box-shadow: 0 4px 12px rgba(104,166,77,0.3);" />
+  <img src="/PlantyScreenshot.jpeg" width="300" alt="Planty App Screenshot" style="border-radius: 16px; border: 4px solid #dbdbdb; box-shadow: 0 4px 12px rgba(104,166,77,0.3);" />
 </div>
 
 <br />
