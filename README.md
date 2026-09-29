@@ -83,7 +83,5 @@ npm run ios
   <p style="color: #68A64D;">
     <i>Built with 💚 for plant lovers.</i>
   </p>
-  <img src="./frontend/appstore.png" height="50" alt="App Store Badge" />
-  &nbsp;&nbsp;
-  <img src="./frontend/playstore.png" height="50" alt="Play Store Badge" />
+  <img src="./frontend/appstore.png" height="50" alt="App Badge" style="border-radius: 10px" />
 </div>
